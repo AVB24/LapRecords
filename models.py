@@ -1,0 +1,36 @@
+import os
+import re
+from datetime import datetime
+
+from google.appengine.api import mail
+from google.appengine.ext import db
+
+
+
+class Track(db.Model):
+	name = db.StringProperty()
+	lap_distance = db.FloatProperty()
+
+class Event(db.Model):
+	name - db.StringProperty()
+	track = db.ReferenceProperty(Track)
+	date = db.DateTimeProperty()
+
+class Race(db.Model):
+	driver = db.ReferenceProperty(Racer)
+	track = db.ReferenceProperty(Track)
+	event = db.ReferenceProperty(Event)
+	time = db.TimeProperty()
+
+class Racer(db.Model):
+	driver = db.UserProperty()
+	points = db.IntegerProperty()
+	car = db.ReferenceProperty(Car)
+	sponsor - db.ReferenceProperty(Sponsor)
+
+class Car(db.Model):
+	make = db.StringProperty()
+	model = db.StringProperty()
+	year = db.StringProperty()
+	color = db.StringProperty()
+	number = db.IntegerProperty()
