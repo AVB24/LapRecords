@@ -45,3 +45,6 @@ class BestLap(db.Model):
 	driver = db.ReferenceProperty(Racer)
 	track = db.ReferenceProperty(Track)
 	time = db.StringProperty()
+
+class Record(db.Model):
+	csv = db.BlobProperty()
