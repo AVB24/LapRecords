@@ -19,7 +19,8 @@ handlers:
 
 - url: /importer
   script: main.app
-  login: required
+  secure: always
+  login: admin
 
 - url: .*
   script: main.app

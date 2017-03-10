@@ -26,6 +26,7 @@ class Importer(webapp2.RequestHandler):
 		upload_url = blobstore.create_upload_url('/upload')
 		self.response.out.write('<html><body>')
 		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		self.response.out.write("""Track Name: <input type="text" name="track"><br>""")
 		self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>""")
 
 		for b in blobstore.BlobInfo.all():
@@ -42,13 +43,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		for line in blob_reader.readlines():
 
 			line = line.split(',')
-			print line
+			#print line
 			s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
-			t = Track.get_or_insert(key_name="LRP", name="LRP", lap_distance=1.02)
+			t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
 			c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 			cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 			r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
-			best = BestLap.get_or_insert(key_name=t.name+line[3].replace(' ','.'), driver=r, track=t, time=line[5])
+			best = BestLap.get_or_insert(key_name=t+line[3].replace(' ','.'), driver=r, track=t, time=line[5])
 		
 		self.redirect('/bestlap')
 
@@ -72,6 +73,8 @@ class MainHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
 		self.response.write(template.render(template_values))
 
+
+
 class BestLapHandler(webapp2.RequestHandler):
 	def get(self):
 		if users.get_current_user():
@@ -87,6 +90,29 @@ class BestLapHandler(webapp2.RequestHandler):
 			'user': user,
 			'bestlaps': bestlaps,
 			'bestlaps_count': bestlaps.count()+1
+		}
+		
+		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
+		self.response.write(template.render(template_values))
+
+	def post(self):
+		if users.get_current_user():
+			user = users.get_current_user()
+			url = users.create_logout_url(self.request.uri)
+			url_linktext = 'Logout'
+		else:
+			url = users.create_login_url(self.request.uri)
+			url_linktext = 'Login'
+		track = self.request.get('track')
+		print track
+		bestlaps_query = BestLap.all()
+		bestlaps_query.filter('track =', track)
+		bestlaps = bestlaps_query.fetch(1000,0)
+		print bestlaps
+		template_values = {
+			'user': user,
+			'bestlaps': bestlaps,
+			'bestlaps_count': len(bestlaps)+1
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')

@@ -43,7 +43,7 @@ class Race(db.Model):
 
 class BestLap(db.Model):
 	driver = db.ReferenceProperty(Racer)
-	track = db.ReferenceProperty(Track)
+	track = db.StringProperty() #db.ReferenceProperty(Track)
 	time = db.StringProperty()
 
 class Record(db.Model):
