@@ -1,0 +1,52 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+Hello {{ user.nickname() }}, :
+
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+      // Load the Visualization API and the piechart package.
+      google.load('visualization', '1', {'packages':['table']});
+
+      // Set a callback to run when the Google Visualization API is loaded.
+      google.setOnLoadCallback(drawTable);
+
+      function drawTable() {
+  			var data = new google.visualization.DataTable();
+  			data.addRows({{ cars_count }});
+  			data.addColumn('string', 'Racer');
+  			data.addColumn('string', 'Track');
+  			data.addColumn('string', 'Best Lap');
+        	
+  			 {% for car in cars %}
+
+  			 	data.setCell({{ loop.index }}, 0, '{{ car.make }}');
+  			 	data.setCell({{ loop.index }}, 1, '{{ car.color }}');
+  			 	data.setCell({{ loop.index }}, 2, '{{ car.color }}');
+    
+  			{% endfor %}
+
+  			var table = new google.visualization.Table(document.getElementById('table_div'));
+  table.draw(data, {showRowNumber: false, sort: 'enable', width: '50%', allowHtml: true});
+
+
+  
+}
+</script>
+<br><hr><br>
+
+</head>
+<body>
+
+
+<div id="table_div"></div>
+{% for car in cars %}
+{{ car.name }}
+{% endfor %}
+
+</body>
+</html>
