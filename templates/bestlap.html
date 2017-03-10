@@ -27,7 +27,7 @@ Hello {{ user.nickname() }}, :
   			 {% for bestlap in bestlaps %}
 
           data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-  			 	data.setCell({{ loop.index }}, 1, '{{ bestlap.driver.driver }}');
+  			 	data.setCell({{ loop.index }}, 1, '{{ bestlap.driver.name }}');
   			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.track.name }}');
   			 	data.setCell({{ loop.index }}, 3, '{{ bestlap.time }}');
           data.setCell({{ loop.index }}, 4, '{{ bestlap.driver.points }}');

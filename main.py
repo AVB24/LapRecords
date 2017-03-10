@@ -30,7 +30,7 @@ class Importer(webapp2.RequestHandler):
 				t = Track.get_or_insert(key_name="LRP", name="LRP", lap_distance=1.02)
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
-				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
+				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
 				best = BestLap.get_or_insert(key_name=t.name+line[3].replace(' ','.'), driver=r, track=t, time=line[5])
 		self.response.write('done')
 

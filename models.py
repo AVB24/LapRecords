@@ -29,6 +29,7 @@ class Car(db.Model):
 
 class Racer(db.Model):
 	driver = db.UserProperty()
+	name = db.StringProperty()
 	points = db.IntegerProperty()
 	car = db.ReferenceProperty(Car)
 	sponsor = db.ReferenceProperty(Sponsor)
