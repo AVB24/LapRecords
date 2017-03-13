@@ -40,16 +40,23 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		record = Record(csv=str(blob_info)).put()
 		blob_reader = blobstore.BlobReader(blob_key)
 #		with open(blob_info) as fp:
+		count = 0
 		for line in blob_reader.readlines():
 
-			line = line.split(',')
-			#print line
-			s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
-			t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
-			c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
-			cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
-			r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
-			best = BestLap.get_or_insert(key_name=t+line[3].replace(' ','.'), driver=r, track=t, time=line[5])
+			if count == 0:
+				count = count + 1
+				continue
+			else:
+				line = line.replace('"','').split(',')
+				print line
+				#print line
+				s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
+				t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
+				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
+				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
+				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
+				best = BestLap.get_or_insert(key_name=t+line[3].replace(' ','.'), driver=r, track=t, time=line[5])
+				count = count + 1
 		
 		self.redirect('/bestlap')
 
