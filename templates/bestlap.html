@@ -45,7 +45,12 @@ Hello {{ user.nickname() }}, :
 </head>
 <body>
 <form action="/bestlap" method="POST" enctype="multipart/form-data">
-Track Name: <input type="text" name="track"><br><input type="submit" name="submit" value="Submit"> </form>
+Track Name: <select name="track">
+{% for track in tracks %}
+<option>{{ track.track }}</option>
+{% endfor %}
+</select>
+<br><input type="submit" name="submit" value="Submit"> </form>
 
 <div id="table_div"></div>
 

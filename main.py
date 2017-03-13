@@ -29,8 +29,8 @@ class Importer(webapp2.RequestHandler):
 		self.response.out.write("""Track Name: <input type="text" name="track"><br>""")
 		self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>""")
 
-		for b in blobstore.BlobInfo.all():
-			self.response.out.write('<li><a href="/serve/%s' % str(b.key()) + '">' + str(b.filename) + '</a>')
+		# for b in blobstore.BlobInfo.all():
+		# 	self.response.out.write('<li><a href="/serve/%s' % str(b.key()) + '">' + str(b.filename) + '</a>')
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
@@ -84,12 +84,13 @@ class BestLapHandler(webapp2.RequestHandler):
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
-	
-		bestlaps = BestLap.all()	
+		bestlaps = BestLap.all()
+		tracks = db.GqlQuery('SELECT DISTINCT track from BestLap').fetch(100,0)
 		template_values = {
 			'user': user,
 			'bestlaps': bestlaps,
-			'bestlaps_count': bestlaps.count()+1
+			'bestlaps_count': bestlaps.count()+1,
+			'tracks': tracks
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
@@ -104,15 +105,16 @@ class BestLapHandler(webapp2.RequestHandler):
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
 		track = self.request.get('track')
-		print track
+		
 		bestlaps_query = BestLap.all()
 		bestlaps_query.filter('track =', track)
 		bestlaps = bestlaps_query.fetch(1000,0)
-		print bestlaps
+		tracks = db.GqlQuery('SELECT DISTINCT track from BestLap').fetch(100,0)
 		template_values = {
 			'user': user,
 			'bestlaps': bestlaps,
-			'bestlaps_count': len(bestlaps)+1
+			'bestlaps_count': len(bestlaps)+1,
+			'tracks': tracks
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
