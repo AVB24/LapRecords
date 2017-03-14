@@ -13,8 +13,8 @@ class RaceClass(db.Model):
 
 class Track(db.Model):
 	name = db.StringProperty()
-	group = db.StringProperty()
-	lap_distance = db.FloatProperty()
+	#group = db.StringProperty()
+	#lap_distance = db.FloatProperty()
 
 class Event(db.Model):
 	name = db.StringProperty()
