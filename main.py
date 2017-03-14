@@ -29,10 +29,6 @@ class Importer(webapp2.RequestHandler):
 		}
 		template = JINJA_ENVIRONMENT.get_template('templates/importer.html')
 		self.response.write(template.render(template_values))
-		#self.response.out.write('<html><body>')
-		#self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
-		#self.response.out.write("""Track Name: <input type="text" name="track"><br>""")
-		#self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>""")
 
 		# for b in blobstore.BlobInfo.all():
 		# 	self.response.out.write('<li><a href="/serve/%s' % str(b.key()) + '">' + str(b.filename) + '</a>')
@@ -57,10 +53,14 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				#print line
 				s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
 				t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
+				g = self.request.get('group')
+				d = self.request.get('date')
+				print "Date", d
+				#e = Event.get_or_insert(key_name=g+t, name=g+t, track=t, date=d)
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
-				best = BestLap.get_or_insert(key_name=t+line[3].replace(' ','.'), driver=r, track=t, time=line[5])
+				best = BestLap.get_or_insert(key_name=d+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=line[5])
 				count = count + 1
 		
 		self.redirect('/bestlap')
@@ -75,11 +75,15 @@ class MainHandler(webapp2.RequestHandler):
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
 
-		cars = Car.all()	
+		#cars = Car.all()
+		#racers = Racer.all()
+		bestlaps = BestLap.all()
 		template_values = {
 			'user': user,
-			'cars': cars,
-			'cars_count': cars.count()+1
+			#'cars': cars,
+			#'racers': racers,
+			'bestlaps': bestlaps,
+			'bestlaps_count': bestlaps.count()+1
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
