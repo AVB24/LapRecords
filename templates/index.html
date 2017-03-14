@@ -17,20 +17,16 @@ Hello {{ user.nickname() }}, :
 
       function drawTable() {
   			var data = new google.visualization.DataTable();
-  			data.addRows({{ bestlaps_count }});
-			data.addColumn('string', 'Car #');
+  			data.addRows({{ cars_count }});
   			data.addColumn('string', 'Racer');
-			data.addColumn('string', 'Race Class');
   			data.addColumn('string', 'Track');
   			data.addColumn('string', 'Best Lap');
         	
-  			 {% for bestlap in bestlaps %}
+  			 {% for car in cars %}
 
-  			 	data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-  			 	data.setCell({{ loop.index }}, 1, '{{ bestlap.driver.name }}');
-  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
-				data.setCell({{ loop.index }}, 3, '{{ bestlap.event.track.name }}');
-				data.setCell({{ loop.index }}, 4, '{{ bestlap.time }}');
+  			 	data.setCell({{ loop.index }}, 0, '{{ car.make }}');
+  			 	data.setCell({{ loop.index }}, 1, '{{ car.color }}');
+  			 	data.setCell({{ loop.index }}, 2, '{{ car.color }}');
     
   			{% endfor %}
 

@@ -13,8 +13,7 @@ class RaceClass(db.Model):
 
 class Track(db.Model):
 	name = db.StringProperty()
-	#group = db.StringProperty()
-	#lap_distance = db.FloatProperty()
+	lap_distance = db.FloatProperty()
 
 class Event(db.Model):
 	name = db.StringProperty()
@@ -31,11 +30,10 @@ class Car(db.Model):
 class Racer(db.Model):
 	driver = db.UserProperty()
 	name = db.StringProperty()
-	city = db.StringProperty()
-	state = db.StringProperty()
 	points = db.IntegerProperty()
 	car = db.ReferenceProperty(Car)
 	sponsor = db.ReferenceProperty(Sponsor)
+	raceclass = db.ReferenceProperty(RaceClass)
 
 class Race(db.Model):
 	driver = db.ReferenceProperty(Racer)
@@ -45,9 +43,7 @@ class Race(db.Model):
 
 class BestLap(db.Model):
 	driver = db.ReferenceProperty(Racer)
-	raceclass = db.ReferenceProperty(RaceClass)
-	event = db.ReferenceProperty(Event)
-	#track = db.StringProperty() #db.ReferenceProperty(Track)
+	track = db.StringProperty() #db.ReferenceProperty(Track)
 	time = db.StringProperty()
 
 class Record(db.Model):
