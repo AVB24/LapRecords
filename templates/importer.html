@@ -1,0 +1,29 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+Hello, :
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/cupertino/jquery-ui.css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+<script>
+  $( function() {
+    $( "#datepicker" ).datepicker();
+  } );
+  </script>
+<br><hr><br>
+
+</head>
+<body>
+<form action={{upload_url}} method="POST" enctype="multipart/form-data">
+Track Name: <input type="text" name="track"><br>
+Upload File: <input type="file" name="file"><br>
+<br>
+Date: <div id="datepicker"></div>
+<input type="submit" name="submit" value="Submit">
+</form>
+</body>
+</html>

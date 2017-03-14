@@ -24,10 +24,15 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 class Importer(webapp2.RequestHandler):
 	def get(self):
 		upload_url = blobstore.create_upload_url('/upload')
-		self.response.out.write('<html><body>')
-		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
-		self.response.out.write("""Track Name: <input type="text" name="track"><br>""")
-		self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>""")
+		template_values = {
+			'upload_url': upload_url
+		}
+		template = JINJA_ENVIRONMENT.get_template('templates/importer.html')
+		self.response.write(template.render(template_values))
+		#self.response.out.write('<html><body>')
+		#self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		#self.response.out.write("""Track Name: <input type="text" name="track"><br>""")
+		#self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>""")
 
 		# for b in blobstore.BlobInfo.all():
 		# 	self.response.out.write('<li><a href="/serve/%s' % str(b.key()) + '">' + str(b.filename) + '</a>')
