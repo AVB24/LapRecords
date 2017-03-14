@@ -28,7 +28,7 @@ Hello {{ user.nickname() }}, :
 
           data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
   			 	data.setCell({{ loop.index }}, 1, '{{ bestlap.driver.name }}');
-  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
+  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.event.track.name }}');
   			 	data.setCell({{ loop.index }}, 3, '{{ bestlap.time }}');
           data.setCell({{ loop.index }}, 4, '{{ bestlap.driver.points }}');
   			{% endfor %}
