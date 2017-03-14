@@ -11,7 +11,11 @@ Hello, :
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 <script>
   $( function() {
-    $( "#datepicker" ).datepicker();
+    $( "#datepicker" ).datepicker({
+      onSelect: function(dateText, inst){
+        $("#datepicker").datepicker("option", "dateFormat", "yy-mm-dd");
+      }
+    });
   } );
   </script>
 <br><hr><br>
@@ -19,10 +23,11 @@ Hello, :
 </head>
 <body>
 <form action={{upload_url}} method="POST" enctype="multipart/form-data">
+Group Name: <input type="text" name="group"><br>
 Track Name: <input type="text" name="track"><br>
 Upload File: <input type="file" name="file"><br>
 <br>
-Date: <div id="datepicker"></div>
+Date: <div id="datepicker" name="date"></div>
 <input type="submit" name="submit" value="Submit">
 </form>
 </body>
