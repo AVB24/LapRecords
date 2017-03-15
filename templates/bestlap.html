@@ -28,7 +28,7 @@ Hello {{ user.nickname() }}, :
 
           data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
   			 	data.setCell({{ loop.index }}, 1, '{{ bestlap.driver.name }}');
-  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.event.track.name }}');
+  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
   			 	data.setCell({{ loop.index }}, 3, '{{ bestlap.time }}');
           data.setCell({{ loop.index }}, 4, '{{ bestlap.driver.points }}');
   			{% endfor %}
@@ -46,8 +46,9 @@ Hello {{ user.nickname() }}, :
 <body>
 <form action="/bestlap" method="POST" enctype="multipart/form-data">
 Track Name: <select name="track">
+<option>all</option>
 {% for track in tracks %}
-<option>{{ track.track }}</option>
+<option>{{ track.name }}</option>
 {% endfor %}
 </select>
 <br><input type="submit" name="submit" value="Submit"> </form>

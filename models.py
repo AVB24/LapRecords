@@ -18,7 +18,7 @@ class Track(db.Model):
 
 class Event(db.Model):
 	name = db.StringProperty()
-	track = db.ReferenceProperty(Track)
+#	track = db.ReferenceProperty(Track)
 	date = db.DateTimeProperty()
 
 class Car(db.Model):
@@ -47,8 +47,8 @@ class BestLap(db.Model):
 	driver = db.ReferenceProperty(Racer)
 	raceclass = db.ReferenceProperty(RaceClass)
 	event = db.ReferenceProperty(Event)
-	#track = db.StringProperty() #db.ReferenceProperty(Track)
-	time = db.StringProperty()
+	track = db.StringProperty() #db.ReferenceProperty(Track)
+	time = db.IntegerProperty()
 
 class Record(db.Model):
 	csv = db.BlobProperty()
