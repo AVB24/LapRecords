@@ -48,7 +48,7 @@ class BestLap(db.Model):
 	raceclass = db.ReferenceProperty(RaceClass)
 	event = db.ReferenceProperty(Event)
 	track = db.StringProperty() #db.ReferenceProperty(Track)
-	time = db.IntegerProperty()
+	time = db.FloatProperty()
 
 class Record(db.Model):
 	csv = db.BlobProperty()

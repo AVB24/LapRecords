@@ -33,7 +33,7 @@ def process_time(time):
 	if time:
 		t = datetime.strptime(time, "%M:%S.%f")
 		delta = timedelta(minutes=t.minute, seconds=t.second,microseconds=t.microsecond)
-		return int(delta.total_seconds())
+		return float(delta.total_seconds())
 
 class Importer(webapp2.RequestHandler):
 	def get(self):
