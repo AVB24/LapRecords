@@ -3,10 +3,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-Hello {{ user.nickname() }}, :
 
+<b> {{ racer.name }} </b>
 
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
     function makeTime(time) {
         // Minutes and seconds
@@ -37,24 +37,26 @@ Hello {{ user.nickname() }}, :
       google.setOnLoadCallback(drawTable);
 
       function drawTable() {
-  			var data = new google.visualization.DataTable();
-  			data.addRows({{ bestlaps_count }});
-        data.addColumn('string', 'Number');
-  			data.addColumn('string', 'Racer');
-  			data.addColumn('string', 'Track');
-  			data.addColumn('string', 'Best Lap');
+        var data = new google.visualization.DataTable();
+        data.addRows({{ bestlaps_count }});
+  //      data.addColumn('string', 'Number');
+  //      data.addColumn('string', 'Racer');
+        data.addColumn('string', 'Track');
+        data.addColumn('string', 'Best Lap');
         data.addColumn('string', 'Points');
-        	
-  			 {% for bestlap in bestlaps %}
+        data.addColumn('string', '')
+          
+         {% for bestlap in bestlaps %}
          var t = makeTime({{ bestlap.time }});
-          data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-  			 	data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
-  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
-  			 	data.setCell({{ loop.index }}, 3, t);
-          data.setCell({{ loop.index }}, 4, '{{ bestlap.driver.points }}');
-  			{% endfor %}
+ //         data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
+ //         data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
+          data.setCell({{ loop.index }}, 0, '{{ bestlap.track }}');
+          data.setCell({{ loop.index }}, 1, t);
+          data.setCell({{ loop.index }}, 2, '{{ bestlap.driver.points }}');
+          data.setCell({{ loop.index }}, 3, '{% if bestlap.isBest %}<b>Best record for track and class</b>{% endif %}')
+        {% endfor %}
 
-  			var table = new google.visualization.Table(document.getElementById('table_div'));
+        var table = new google.visualization.Table(document.getElementById('table_div'));
   table.draw(data, {showRowNumber: false, sort: 'enable', width: '50%', allowHtml: true});
 
 
@@ -65,14 +67,7 @@ Hello {{ user.nickname() }}, :
 
 </head>
 <body>
-<form action="/bestlap" method="POST" enctype="multipart/form-data">
-Track Name: <select name="track">
-<option>all</option>
-{% for track in tracks %}
-<option>{{ track.name }}</option>
-{% endfor %}
-</select>
-<br><input type="submit" name="submit" value="Submit"> </form>
+
 
 <div id="table_div"></div>
 

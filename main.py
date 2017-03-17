@@ -182,8 +182,23 @@ class BestLapHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
 		self.response.write(template.render(template_values))
 
+class DriverHandler(webapp2.RequestHandler):
+	def get(self, driver):
+		racer = Racer.all().filter('name =', driver).fetch(1,0)[0]
+		print racer.name
+		bl = BestLap.all().filter('driver =', racer).fetch(100,0)
+		template_values = {
+			'racer': racer,
+			'bestlaps': bl,
+			'bestlaps_count': len(bl) + 1
+		}
+		template = JINJA_ENVIRONMENT.get_template('templates/driver.html')
+		self.response.write(template.render(template_values))
+
+
 app = webapp2.WSGIApplication([
 	('/', MainHandler),
+	('/driver/(.*)', DriverHandler),
 	('/bestlap', BestLapHandler),
 	('/importer', Importer),
 	('/upload', UploadHandler)], debug=True)
