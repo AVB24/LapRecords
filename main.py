@@ -22,6 +22,27 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
 	extensions=['jinja2.ext.autoescape'])
 
+def determine_best(time, entity):
+	race_class = entity.raceclass#.name
+	track = entity.track
+	bestlaps_query = BestLap.all()
+	bestlaps_query.filter("raceclass =", race_class)
+	bestlaps_query.filter("track =", track)
+	bestlaps_query.filter("isBest =", True)
+	bq = bestlaps_query.fetch(1,0)
+	if bq:
+		lap = bq[0]
+		if time < lap.time:
+			lap.isBest = False
+			lap.put()
+			entity.isBest = True
+			entity.put()
+			print 'Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name
+	else:
+		print 'New Best'
+		entity.isBest = True
+		entity.put()
+
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
 	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
@@ -66,6 +87,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				if time.count(':') == 0 and time:
 					time = '0:' + time
 				#print line
+				pt = process_time(time)
 				s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
 				t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
 				g = self.request.get('group')
@@ -76,7 +98,9 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
-				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=process_time(time))
+				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, isBest=False)
+				determine_best(pt, best)
+				print best.driver.name, str(best.isBest)
 				count = count + 1
 		
 		self.redirect('/bestlap')
@@ -116,12 +140,17 @@ class BestLapHandler(webapp2.RequestHandler):
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
-		bestlaps = BestLap.all()
+		
+		
+		bestlaps_query = BestLap.all() #db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(100,0)
+		proj = BestLap.all().projection()
+		bestlaps_query.order('-time')
+		bestlaps = bestlaps_query.fetch(1000,0)
 		tracks = Track.all()#db.GqlQuery('SELECT DISTINCT track from BestLap').fetch(100,0)
 		template_values = {
 			'user': user,
 			'bestlaps': bestlaps,
-			'bestlaps_count': bestlaps.count()+1,
+			'bestlaps_count': len(bestlaps)+1,
 			'tracks': tracks
 		}
 		
@@ -137,6 +166,7 @@ class BestLapHandler(webapp2.RequestHandler):
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
 		track = self.request.get('track')		
+
 		bestlaps_query = BestLap.all()
 		if track != 'all':
 			bestlaps_query.filter('track =', track)
@@ -156,5 +186,4 @@ app = webapp2.WSGIApplication([
 	('/', MainHandler),
 	('/bestlap', BestLapHandler),
 	('/importer', Importer),
-	('/upload', UploadHandler)
-], debug=True)
+	('/upload', UploadHandler)], debug=True)

@@ -49,6 +49,7 @@ class BestLap(db.Model):
 	event = db.ReferenceProperty(Event)
 	track = db.StringProperty() #db.ReferenceProperty(Track)
 	time = db.FloatProperty()
+	isBest = db.BooleanProperty()
 
 class Record(db.Model):
 	csv = db.BlobProperty()
