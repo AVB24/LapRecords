@@ -118,17 +118,38 @@ class MainHandler(webapp2.RequestHandler):
 		#cars = Car.all()
 		#racers = Racer.all()
 		bestlaps = BestLap.all()
+		tracks = Track.all()
 		template_values = {
 			'user': user,
-			#'cars': cars,
-			#'racers': racers,
 			'bestlaps': bestlaps,
-			'bestlaps_count': bestlaps.count()+1
+			'bestlaps_count': bestlaps.count()+1,
+			'tracks': tracks
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
 		self.response.write(template.render(template_values))
+	
+	def post(self):
+		if users.get_current_user():
+			user = users.get_current_user()
+			url = users.create_logout_url(self.request.uri)
+			url_linktext = 'Logout'
+		else:
+			url = users.create_login_url(self.request.uri)
+			url_linktext = 'Login'
+		track = self.request.get('track')
 
+		bestlaps_query = BestLap.all()
+		if track != 'all':
+			bestlaps_query.filter('track =', track)
+		bestlaps = bestlaps_query.fetch(1000,0)
+		tracks = Track.all()
+		template_values = {
+			'user': user,
+			'bestlaps': bestlaps,
+			'bestlaps_count': len(bestlaps)+1,
+			'tracks': tracks
+		}
 
 
 class BestLapHandler(webapp2.RequestHandler):
@@ -141,11 +162,10 @@ class BestLapHandler(webapp2.RequestHandler):
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
 		
-		
 		bestlaps_query = BestLap.all() #db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(100,0)
-		proj = BestLap.all().projection()
+		bestlaps_query.filter("isBest =", True)
 		bestlaps_query.order('-time')
-		bestlaps = bestlaps_query.fetch(1000,0)
+		bestlaps = bestlaps_query.fetch(1000, 0)
 		tracks = Track.all()#db.GqlQuery('SELECT DISTINCT track from BestLap').fetch(100,0)
 		template_values = {
 			'user': user,
@@ -165,9 +185,10 @@ class BestLapHandler(webapp2.RequestHandler):
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
-		track = self.request.get('track')		
+		track = self.request.get('track')
 
 		bestlaps_query = BestLap.all()
+		bestlaps_query.filter("isBest =", True)
 		if track != 'all':
 			bestlaps_query.filter('track =', track)
 		bestlaps = bestlaps_query.fetch(1000,0)

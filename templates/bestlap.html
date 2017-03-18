@@ -6,75 +6,76 @@
 Hello {{ user.nickname() }}, :
 
 
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript">
-    function makeTime(time) {
-        // Minutes and seconds
-        var mins = ~~(time / 60);
-        var secs = time % 60;
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<link rel="stylesheet" type="text/css" media="all" href="/css/styles.css">
+<script type="text/javascript">
+function makeTime(time) {
+    // Minutes and seconds
+    var mins = ~~(time / 60);
+    var secs = time % 60;
 
-        // Hours, minutes and seconds
-        var hrs = ~~(time / 3600);
-        var mins = ~~((time % 3600) / 60);
-        var secs = time % 60;
+    // Hours, minutes and seconds
+    var hrs = ~~(time / 3600);
+    var mins = ~~((time % 3600) / 60);
+    var secs = time % 60;
 
-        // Output like "1:01" or "4:03:59" or "123:03:59"
-        var ret = "";
+    // Output like "1:01" or "4:03:59" or "123:03:59"
+    var ret = "";
 
-        if (hrs > 0) {
-            ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
-        }
+    if (hrs > 0) {
+        ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+    }
 
-        ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-        ret += "" + secs.toFixed(3);
-        return ret;
-    };
+    ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+    ret += "" + secs.toFixed(3);
+    return ret;
+};
 
-      // Load the Visualization API and the piechart package.
-      google.load('visualization', '1', {'packages':['table']});
+// Load the Visualization API and the piechart package.
+google.load('visualization', '1', {'packages':['table']});
 
-      // Set a callback to run when the Google Visualization API is loaded.
-      google.setOnLoadCallback(drawTable);
+// Set a callback to run when the Google Visualization API is loaded.
+google.setOnLoadCallback(drawTable);
 
-      function drawTable() {
-  			var data = new google.visualization.DataTable();
-  			data.addRows({{ bestlaps_count }});
-        data.addColumn('string', 'Number');
-  			data.addColumn('string', 'Racer');
-  			data.addColumn('string', 'Track');
-  			data.addColumn('string', 'Best Lap');
-        data.addColumn('string', 'Points');
-        	
-  			 {% for bestlap in bestlaps %}
-         var t = makeTime({{ bestlap.time }});
-          data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-  			 	data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
-  			 	data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
-  			 	data.setCell({{ loop.index }}, 3, t);
-          data.setCell({{ loop.index }}, 4, '{{ bestlap.driver.points }}');
-  			{% endfor %}
+function drawTable() {
+    var data = new google.visualization.DataTable();
+    data.addRows({{ bestlaps_count }});
+    data.addColumn('string', 'Number');
+    data.addColumn('string', 'Racer');
+    data.addColumn('string', 'Track');
+    data.addColumn('string', 'Class');
+    data.addColumn('string', 'Best Lap');
 
-  			var table = new google.visualization.Table(document.getElementById('table_div'));
-  table.draw(data, {showRowNumber: false, sort: 'enable', width: '50%', allowHtml: true});
+     {% for bestlap in bestlaps %}
+        var t = makeTime({{ bestlap.time }});
+        data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
+        data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
+        data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
+        data.setCell({{ loop.index }}, 3, '{{ bestlap.raceclass.name }}');
+        data.setCell({{ loop.index }}, 4, t);
+    {% endfor %}
 
-
-  
+    var table = new google.visualization.Table(document.getElementById('table_div'));
+    table.draw(data, {showRowNumber: false, sort: 'enable', width: '50%', allowHtml: true});
 }
 </script>
 <br><hr><br>
 
 </head>
 <body>
-<form action="/bestlap" method="POST" enctype="multipart/form-data">
-Track Name: <select name="track">
-<option>all</option>
-{% for track in tracks %}
-<option>{{ track.name }}</option>
-{% endfor %}
-</select>
-<br><input type="submit" name="submit" value="Submit"> </form>
+    <div id="w">
+        <div id="content">
+            <form action="/bestlap" method="POST" enctype="multipart/form-data">
+            Track Name: <select name="track">
+            <option>all</option>
+            {% for track in tracks %}
+            <option>{{ track.name }}</option>
+            {% endfor %}
+            </select>
+            <br><input type="submit" name="submit" value="Submit"> </form>
 
-<div id="table_div"></div>
-
+            <div id="table_div" align="center"></div>
+        </div>
+    </div>
 </body>
 </html>
