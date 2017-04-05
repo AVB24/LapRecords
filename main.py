@@ -36,12 +36,11 @@ def determine_best(time, entity):
 			lap.isBest = False
 			lap.put()
 			entity.isBest = True
-			entity.put()
 			print 'Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name
 	else:
 		print 'New Best'
 		entity.isBest = True
-		entity.put()
+	entity.put()
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
@@ -99,6 +98,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
 				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, isBest=False)
+				best.put()
 				determine_best(pt, best)
 				print best.driver.name, str(best.isBest)
 				count = count + 1
