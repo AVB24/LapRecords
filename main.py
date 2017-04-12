@@ -10,6 +10,7 @@ import webapp2
 import sys
 import os
 from datetime import datetime, timedelta
+from time import sleep
 from google.appengine.api import users
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
@@ -23,24 +24,36 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	extensions=['jinja2.ext.autoescape'])
 
 def determine_best(time, entity):
+	logging.info('Starting Logging for Racer:' + entity.driver.name)
 	race_class = entity.raceclass#.name
 	track = entity.track
 	bestlaps_query = BestLap.all()
 	bestlaps_query.filter("raceclass =", race_class)
 	bestlaps_query.filter("track =", track)
 	bestlaps_query.filter("isBest =", True)
-	bq = bestlaps_query.fetch(1,0)
-	if bq:
-		lap = bq[0]
-		if time < lap.time:
-			lap.isBest = False
-			lap.put()
-			entity.isBest = True
-			print 'Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name
+	q = bestlaps_query.fetch(1,0)
+	logging.info('Query Count: ' + str(len(q)))
+	logging.info('RaceClass: ' + entity.raceclass.name)
+	logging.info('Track: ' + entity.track)
+	logging.info('Time: ' +  str(time))
+	logging.info('Entity Time: ' +  str(entity.time))
+	if q:
+		for lap in q:
+			logging.info('Lap Driver:' + lap.driver.name)
+			logging.info('Lap Driver Time: ' +  str(lap.time))
+			if time < lap.time:
+				lap.isBest = False
+				entity.isBest = True
+				lap.put()
+				sleep(1)
+				entity.put()
+				sleep(1)
+				logging.info('Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name)
 	else:
-		print 'New Best'
+		logging.info( 'New Best')
 		entity.isBest = True
-	entity.put()
+		entity.put()
+	logging.info('Ending Logging for Racer:' + entity.driver.name)
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
