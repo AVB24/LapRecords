@@ -24,7 +24,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	extensions=['jinja2.ext.autoescape'])
 
 def determine_best(time, entity):
-	logging.info('Starting Logging for Racer:' + entity.driver.name)
+	#logging.info('Starting Logging for Racer:' + entity.driver.name)
 	race_class = entity.raceclass#.name
 	track = entity.track
 	bestlaps_query = BestLap.all()
@@ -32,15 +32,15 @@ def determine_best(time, entity):
 	bestlaps_query.filter("track =", track)
 	bestlaps_query.filter("isBest =", True)
 	q = bestlaps_query.fetch(1,0)
-	logging.info('Query Count: ' + str(len(q)))
-	logging.info('RaceClass: ' + entity.raceclass.name)
-	logging.info('Track: ' + entity.track)
-	logging.info('Time: ' +  str(time))
-	logging.info('Entity Time: ' +  str(entity.time))
+	#logging.info('Query Count: ' + str(len(q)))
+	#logging.info('RaceClass: ' + entity.raceclass.name)
+	#logging.info('Track: ' + entity.track)
+	#logging.info('Time: ' +  str(time))
+	#logging.info('Entity Time: ' +  str(entity.time))
 	if q:
 		for lap in q:
-			logging.info('Lap Driver:' + lap.driver.name)
-			logging.info('Lap Driver Time: ' +  str(lap.time))
+			#logging.info('Lap Driver:' + lap.driver.name)
+			#logging.info('Lap Driver Time: ' +  str(lap.time))
 			if time < lap.time:
 				lap.isBest = False
 				lap.put()
@@ -50,8 +50,8 @@ def determine_best(time, entity):
 		logging.info( 'New Best')
 		entity.isBest = True
 	entity.put()
-	sleep(.1)
-	logging.info('Ending Logging for Racer:' + entity.driver.name)
+	sleep(.3)
+	#logging.info('Ending Logging for Racer:' + entity.driver.name)
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
@@ -108,7 +108,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
-				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, isBest=False)
+				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
 				best.put()
 				determine_best(pt, best)
 				print best.driver.name, str(best.isBest)

@@ -8,6 +8,27 @@ Welcome {{ user.nickname() }}, :
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css">
 <script type="text/javascript">
+    function makeTime(time) {
+        // Minutes and seconds
+        var mins = ~~(time / 60);
+        var secs = time % 60;
+
+        // Hours, minutes and seconds
+        var hrs = ~~(time / 3600);
+        var mins = ~~((time % 3600) / 60);
+        var secs = time % 60;
+
+        // Output like "1:01" or "4:03:59" or "123:03:59"
+        var ret = "";
+
+        if (hrs > 0) {
+            ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+        }
+
+        ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+        ret += "" + secs.toFixed(3);
+        return ret;
+    };
 // Load the Visualization API and the piechart package.
 //google.load('visualization', '1', {'packages':['table']});
 
@@ -22,13 +43,16 @@ function drawTable() {
     data.addColumn('string', 'Race Class');
     data.addColumn('string', 'Track');
     data.addColumn('string', 'Best Lap');
+    data.addColumn('string', 'Date');
     	
     {% for bestlap in bestlaps %}
+        var t = makeTime({{ bestlap.time }});
         data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
         data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
         data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
         data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
-        data.setCell({{ loop.index }}, 4, '{{ bestlap.time }}');
+        data.setCell({{ loop.index }}, 4, t);
+        data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date }}');
     {% endfor %}
 
     var dashboard = new google.visualization.Dashboard(document.querySelector('#dashboard'));

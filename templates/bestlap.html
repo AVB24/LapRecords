@@ -45,6 +45,7 @@ function drawTable() {
     data.addColumn('string', 'Track');
     data.addColumn('string', 'Class');
     data.addColumn('string', 'Best Lap');
+    data.addColumn('string', 'Date');
 
      {% for bestlap in bestlaps %}
         var t = makeTime({{ bestlap.time }});
@@ -53,6 +54,7 @@ function drawTable() {
         data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
         data.setCell({{ loop.index }}, 3, '{{ bestlap.raceclass.name }}');
         data.setCell({{ loop.index }}, 4, t);
+        data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date }}');
     {% endfor %}
 
 
