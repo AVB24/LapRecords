@@ -17,6 +17,7 @@ from google.appengine.ext.webapp import template
 from models import Track, Car, Race, Racer, Event, Sponsor, BestLap, RaceClass, Record
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
+from time import sleep
 
 JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -41,6 +42,7 @@ def determine_best(time, entity):
 		print 'New Best'
 		entity.isBest = True
 	entity.put()
+	sleep(.1)
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
@@ -98,7 +100,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
 				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, isBest=False)
-				best.put()
+#				best.put()
 				determine_best(pt, best)
 				print best.driver.name, str(best.isBest)
 				count = count + 1
