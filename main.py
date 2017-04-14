@@ -43,16 +43,14 @@ def determine_best(time, entity):
 			logging.info('Lap Driver Time: ' +  str(lap.time))
 			if time < lap.time:
 				lap.isBest = False
-				entity.isBest = True
 				lap.put()
-				sleep(1)
-				entity.put()
-				sleep(1)
+				entity.isBest = True
 				logging.info('Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name)
 	else:
 		logging.info( 'New Best')
 		entity.isBest = True
-		entity.put()
+	entity.put()
+	sleep(.1)
 	logging.info('Ending Logging for Racer:' + entity.driver.name)
 
 def prefetch_refprop(entities, prop):

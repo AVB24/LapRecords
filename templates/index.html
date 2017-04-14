@@ -9,11 +9,11 @@ Welcome {{ user.nickname() }}, :
 <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css">
 <script type="text/javascript">
 // Load the Visualization API and the piechart package.
-google.load('visualization', '1', {'packages':['table']});
+//google.load('visualization', '1', {'packages':['table']});
 
 // Set a callback to run when the Google Visualization API is loaded.
-google.setOnLoadCallback(drawTable);
-
+//google.setOnLoadCallback(drawTable);
+google.load('visualization', '1', {'packages':['controls'], callback: drawTable});
 function drawTable() {
     var data = new google.visualization.DataTable();
     data.addRows({{ bestlaps_count }});
@@ -25,14 +25,43 @@ function drawTable() {
     	
     {% for bestlap in bestlaps %}
         data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-        data.setCell({{ loop.index }}, 1, '{{ bestlap.driver.name }}');
+        data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
         data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
         data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
         data.setCell({{ loop.index }}, 4, '{{ bestlap.time }}');
     {% endfor %}
 
-    var table = new google.visualization.Table(document.getElementById('table_div'));
-    table.draw(data, {showRowNumber: false, sort: 'enable', width: '50%', allowHtml: true});
+    var dashboard = new google.visualization.Dashboard(document.querySelector('#dashboard'));
+
+    var racerFilter = new google.visualization.ControlWrapper({
+        controlType: 'StringFilter',
+        containerId: 'racer_filter',
+        options: {
+            filterColumnIndex: 1
+        }
+    });
+
+    var classFilter = new google.visualization.ControlWrapper({
+        controlType: 'StringFilter',
+        containerId: 'class_filter',
+        options: {
+            filterColumnIndex: 2
+        }
+    });
+
+    var table = new google.visualization.ChartWrapper({
+        chartType: 'Table',
+        containerId: 'table_div',
+        options: {
+            page: 'enable',
+            pageSize: '25',
+            showRowNumber: false,
+            allowHtml: true
+        }
+    });
+
+    dashboard.bind([racerFilter, classFilter], [table]);
+    dashboard.draw(data);
 }
 </script>
 <br><hr><br>
@@ -40,17 +69,13 @@ function drawTable() {
 </head>
 <body>
     <div id="w">
-            <div id="content">
-                <form action="/" method="POST" enctype="multipart/form-data">
-                Track Name: <select name="track">
-                <option>all</option>
-                {% for track in tracks %}
-                <option>{{ track.name }}</option>
-                {% endfor %}
-                </select>
-                <br><input type="submit" name="submit" value="Submit"> </form>
-                <div id="table_div" align="center"></div>
+        <div id="content">
+            <div id="dashboard" align="center">
+                <div id="racer_filter"></div>
+                <div id="class_filter"></div>
+                <div id="table_div"></div>
             </div>
+        </div>
     </div>
 </body>
 </html>
