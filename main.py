@@ -44,11 +44,16 @@ def determine_best(time, entity):
 			logging.info('Lap Driver Time: ' +  str(lap.time))
 			if time < lap.time:
 				lap.isBest = False
+<<<<<<< HEAD
 				entity.isBest = True
 				lap.put()
 				sleep(1)
 				entity.put()
 				sleep(1)
+=======
+				lap.put()
+				entity.isBest = True
+>>>>>>> b61257109d81e7628c863ee0409a0cae24252a52
 				logging.info('Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name)
 	else:
 		logging.info( 'New Best')
@@ -56,10 +61,14 @@ def determine_best(time, entity):
 <<<<<<< HEAD
 	entity.put()
 	sleep(.1)
+<<<<<<< HEAD
 =======
 		entity.put()
 	logging.info('Ending Logging for Racer:' + entity.driver.name)
 >>>>>>> a12643298c7c5a4ed0f2731bfb58cbe995b333f7
+=======
+	logging.info('Ending Logging for Racer:' + entity.driver.name)
+>>>>>>> b61257109d81e7628c863ee0409a0cae24252a52
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
