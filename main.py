@@ -25,7 +25,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	extensions=['jinja2.ext.autoescape'])
 
 def determine_best(time, entity):
-	logging.info('Starting Logging for Racer:' + entity.driver.name)
+	#logging.info('Starting Logging for Racer:' + entity.driver.name)
 	race_class = entity.raceclass#.name
 	track = entity.track
 	bestlaps_query = BestLap.all()
@@ -33,15 +33,15 @@ def determine_best(time, entity):
 	bestlaps_query.filter("track =", track)
 	bestlaps_query.filter("isBest =", True)
 	q = bestlaps_query.fetch(1,0)
-	logging.info('Query Count: ' + str(len(q)))
-	logging.info('RaceClass: ' + entity.raceclass.name)
-	logging.info('Track: ' + entity.track)
-	logging.info('Time: ' +  str(time))
-	logging.info('Entity Time: ' +  str(entity.time))
+	#logging.info('Query Count: ' + str(len(q)))
+	#logging.info('RaceClass: ' + entity.raceclass.name)
+	#logging.info('Track: ' + entity.track)
+	#logging.info('Time: ' +  str(time))
+	#logging.info('Entity Time: ' +  str(entity.time))
 	if q:
 		for lap in q:
-			logging.info('Lap Driver:' + lap.driver.name)
-			logging.info('Lap Driver Time: ' +  str(lap.time))
+			#logging.info('Lap Driver:' + lap.driver.name)
+			#logging.info('Lap Driver Time: ' +  str(lap.time))
 			if time < lap.time:
 				lap.isBest = False
 <<<<<<< HEAD
@@ -60,6 +60,7 @@ def determine_best(time, entity):
 		entity.isBest = True
 <<<<<<< HEAD
 	entity.put()
+<<<<<<< HEAD
 	sleep(.1)
 <<<<<<< HEAD
 =======
@@ -69,6 +70,10 @@ def determine_best(time, entity):
 =======
 	logging.info('Ending Logging for Racer:' + entity.driver.name)
 >>>>>>> b61257109d81e7628c863ee0409a0cae24252a52
+=======
+	sleep(.3)
+	#logging.info('Ending Logging for Racer:' + entity.driver.name)
+>>>>>>> fee43c9268f19ecbdea4d698e1142b532daac32f
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
