@@ -42,8 +42,8 @@ function drawTable() {
     data.addRows({{ bestlaps_count }});
     data.addColumn('string', 'Number');
     data.addColumn('string', 'Racer');
-    data.addColumn('string', 'Track');
     data.addColumn('string', 'Class');
+    data.addColumn('string', 'Track');
     data.addColumn('string', 'Best Lap');
     data.addColumn('string', 'Date');
 
@@ -51,8 +51,8 @@ function drawTable() {
         var t = makeTime({{ bestlap.time }});
         data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
         data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
-        data.setCell({{ loop.index }}, 2, '{{ bestlap.track }}');
-        data.setCell({{ loop.index }}, 3, '{{ bestlap.raceclass.name }}');
+        data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
+        data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
         data.setCell({{ loop.index }}, 4, t);
         data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date }}');
     {% endfor %}
@@ -64,7 +64,11 @@ function drawTable() {
         controlType: 'StringFilter',
         containerId: 'racer_filter',
         options: {
-            filterColumnIndex: 1
+            filterColumnIndex: 1,
+            matchType: 'any',
+            'ui': {
+                labelStacking: 'vertical'
+            }
         }
     });
 
@@ -72,7 +76,21 @@ function drawTable() {
         controlType: 'StringFilter',
         containerId: 'class_filter',
         options: {
-            filterColumnIndex: 2
+            filterColumnIndex: 2,
+            'ui': {
+                labelStacking: 'vertical'
+            }
+        }
+    });
+
+    var trackFilter = new google.visualization.ControlWrapper({
+        controlType: 'StringFilter',
+        containerId: 'track_filter',
+        options: {
+            filterColumnIndex: 3,
+            'ui': {
+                labelStacking: 'vertical'
+            }
         }
     });
 
@@ -84,10 +102,13 @@ function drawTable() {
             pageSize: '25',
             showRowNumber: false,
             allowHtml: true
+        },
+        'ui': {
+            labelStacking: 'vertical'
         }
     });
 
-    dashboard.bind([racerFilter, classFilter], [table]);
+    dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
     dashboard.draw(data);
 }
 </script>
@@ -98,8 +119,9 @@ function drawTable() {
     <div id="w">
 <div id="content">
             <div id="dashboard" align="center">
-                <div id="racer_filter"></div>
-                <div id="class_filter"></div>
+                    <div class='inline'><div id="racer_filter"></div></div>
+                    <div class='inline'><div id="class_filter"></div></div>
+                    <div class='inline'><div id="track_filter"></div></div>
                 <div id="table_div"></div>
             </div>
         </div>

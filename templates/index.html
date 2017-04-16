@@ -61,7 +61,11 @@ function drawTable() {
         controlType: 'StringFilter',
         containerId: 'racer_filter',
         options: {
-            filterColumnIndex: 1
+            filterColumnIndex: 1,
+            matchType: 'any',
+            'ui': {
+                labelStacking: 'vertical'
+            }
         }
     });
 
@@ -69,7 +73,21 @@ function drawTable() {
         controlType: 'StringFilter',
         containerId: 'class_filter',
         options: {
-            filterColumnIndex: 2
+            filterColumnIndex: 2,
+            'ui': {
+                labelStacking: 'vertical'
+            }
+        }
+    });
+
+    var trackFilter = new google.visualization.ControlWrapper({
+        controlType: 'StringFilter',
+        containerId: 'track_filter',
+        options: {
+            filterColumnIndex: 3,
+            'ui': {
+                labelStacking: 'vertical'
+            }
         }
     });
 
@@ -84,7 +102,7 @@ function drawTable() {
         }
     });
 
-    dashboard.bind([racerFilter, classFilter], [table]);
+    dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
     dashboard.draw(data);
 }
 </script>
@@ -95,8 +113,11 @@ function drawTable() {
     <div id="w">
         <div id="content">
             <div id="dashboard" align="center">
-                <div id="racer_filter"></div>
-                <div id="class_filter"></div>
+                <div class='inline'><div id="racer_filter"></div></div>
+                <div class='inline'><div id="class_filter"></div></div>
+                <div class='inline'><div id="track_filter"></div></div>
+                <br>
+                <br>
                 <div id="table_div"></div>
             </div>
         </div>
