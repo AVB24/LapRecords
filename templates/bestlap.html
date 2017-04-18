@@ -4,6 +4,7 @@
 <html>
 <head>
 Hello {{ user.nickname() }}, :
+{{ greeting }}
 
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -66,6 +67,7 @@ function drawTable() {
         options: {
             filterColumnIndex: 1,
             matchType: 'any',
+            caseSensitive: 'false',
             'ui': {
                 labelStacking: 'vertical'
             }

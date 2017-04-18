@@ -18,7 +18,6 @@ from google.appengine.ext.webapp import template
 from models import Track, Car, Race, Racer, Event, Sponsor, BestLap, RaceClass, Record
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
-from time import sleep
 
 JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -44,36 +43,15 @@ def determine_best(time, entity):
 			#logging.info('Lap Driver Time: ' +  str(lap.time))
 			if time < lap.time:
 				lap.isBest = False
-<<<<<<< HEAD
-				entity.isBest = True
-				lap.put()
-				sleep(1)
-				entity.put()
-				sleep(1)
-=======
 				lap.put()
 				entity.isBest = True
->>>>>>> b61257109d81e7628c863ee0409a0cae24252a52
 				logging.info('Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name)
 	else:
 		logging.info( 'New Best')
 		entity.isBest = True
-<<<<<<< HEAD
 	entity.put()
-<<<<<<< HEAD
-	sleep(.1)
-<<<<<<< HEAD
-=======
-		entity.put()
-	logging.info('Ending Logging for Racer:' + entity.driver.name)
->>>>>>> a12643298c7c5a4ed0f2731bfb58cbe995b333f7
-=======
-	logging.info('Ending Logging for Racer:' + entity.driver.name)
->>>>>>> b61257109d81e7628c863ee0409a0cae24252a52
-=======
 	sleep(.3)
 	#logging.info('Ending Logging for Racer:' + entity.driver.name)
->>>>>>> fee43c9268f19ecbdea4d698e1142b532daac32f
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
@@ -90,9 +68,20 @@ def process_time(time):
 
 class Importer(webapp2.RequestHandler):
 	def get(self):
+		user = users.get_current_user()
+		if user:
+			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
+							(user.nickname(), users.create_logout_url("/")))
+		else:
+			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+							users.create_login_url("/"))
+		if not users.is_current_user_admin():
+			self.redirect('/')
 		upload_url = blobstore.create_upload_url('/upload')
 		template_values = {
-			'upload_url': upload_url
+			'user': user,
+			'upload_url': upload_url,
+			'greeting': greeting
 		}
 		template = JINJA_ENVIRONMENT.get_template('templates/importer.html')
 		self.response.write(template.render(template_values))
@@ -130,8 +119,8 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
-				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, isBest=False)
-#				best.put()
+				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
+				best.put()
 				determine_best(pt, best)
 				print best.driver.name, str(best.isBest)
 				count = count + 1
@@ -140,13 +129,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
 class MainHandler(webapp2.RequestHandler):
 	def get(self):
-		if users.get_current_user():
-			user = users.get_current_user()
-			url = users.create_logout_url(self.request.uri)
-			url_linktext = 'Logout'
+		user = users.get_current_user()
+		if user:
+			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
+							(user.nickname(), users.create_logout_url("/")))
 		else:
-			url = users.create_login_url(self.request.uri)
-			url_linktext = 'Login'
+			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+							users.create_login_url("/"))
 
 		#cars = Car.all()
 		#racers = Racer.all()
@@ -156,20 +145,21 @@ class MainHandler(webapp2.RequestHandler):
 			'user': user,
 			'bestlaps': bestlaps,
 			'bestlaps_count': bestlaps.count()+1,
-			'tracks': tracks
+			'tracks': tracks,
+			'greeting': greeting
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
 		self.response.write(template.render(template_values))
 	
 	def post(self):
-		if users.get_current_user():
-			user = users.get_current_user()
-			url = users.create_logout_url(self.request.uri)
-			url_linktext = 'Logout'
+		user = users.get_current_user()
+		if user:
+			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
+							(user.nickname(), users.create_logout_url("/")))
 		else:
-			url = users.create_login_url(self.request.uri)
-			url_linktext = 'Login'
+			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+							users.create_login_url("/"))
 		track = self.request.get('track')
 
 		bestlaps_query = BestLap.all()
@@ -181,20 +171,22 @@ class MainHandler(webapp2.RequestHandler):
 			'user': user,
 			'bestlaps': bestlaps,
 			'bestlaps_count': len(bestlaps)+1,
-			'tracks': tracks
+			'tracks': tracks,
+			'greeting': greeting
 		}
 
 
 class BestLapHandler(webapp2.RequestHandler):
 	def get(self):
-		if users.get_current_user():
-			user = users.get_current_user()
-			url = users.create_logout_url(self.request.uri)
-			url_linktext = 'Logout'
+		user = users.get_current_user()
+		if user:
+			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
+							(user.nickname(), users.create_logout_url("/")))
 		else:
-			url = users.create_login_url(self.request.uri)
-			url_linktext = 'Login'
-		
+			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+							users.create_login_url("/"))
+		if not users.is_current_user_admin():
+			self.redirect('/')
 		bestlaps_query = BestLap.all() #db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(100,0)
 		bestlaps_query.filter("isBest =", True)
 		bestlaps_query.order('-time')
@@ -204,7 +196,8 @@ class BestLapHandler(webapp2.RequestHandler):
 			'user': user,
 			'bestlaps': bestlaps,
 			'bestlaps_count': len(bestlaps)+1,
-			'tracks': tracks
+			'tracks': tracks,
+			'greeting': greeting
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')

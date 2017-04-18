@@ -29,6 +29,7 @@ class Car(db.Model):
 	number = db.StringProperty()
 
 class Racer(db.Model):
+	email = db.EmailProperty()
 	driver = db.UserProperty()
 	name = db.StringProperty()
 	city = db.StringProperty()
