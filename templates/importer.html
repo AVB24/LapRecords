@@ -31,5 +31,26 @@ Date: <input id="datepicker" type="text" name="date"><br>
 <br>
 <input type="submit" name="submit" value="Submit">
 </form>
+<hr>
+ <form action="/picupload"
+            enctype="multipart/form-data"
+            method="post">
+        <div>
+          <textarea name="content" rows="3" cols="60"></textarea>
+        </div>
+        <select name="driver">
+        {% for driver in drivers %}
+        <option value="{{ driver.key() }}">{{ driver.name }}</option>
+        {% endfor %}
+        </select>
+        <div><label>Picture:</label></div>
+        <div><input type="file" name="img"/></div>
+        <div><input type="submit" value="Upload"></div>
+      </form>
+      <hr>
+<!--       <form>Driver name: <input value="driver_photo" name="driver_photo">
+      <input type="submit" value="switch"></form> -->
+    </body>
+  </html>
 </body>
 </html>

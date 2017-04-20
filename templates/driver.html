@@ -72,7 +72,7 @@ function drawTable() {
   
   <div id="w">
     <div id="content" class="clearfix">
-      <div id="userphoto"><img src="/images/avatar.png" alt="default avatar"><br>
+      <div id="userphoto"><img src="/imageit?key={{racer.key()}}" alt="default avatar"></img><br>
        Sponsor: {{racer.sponsor}}
       </div>
       <h1>{{racer.name}}</h1>
@@ -86,6 +86,7 @@ function drawTable() {
       
       <section id="bio">
         <p>Racer Name: {{racer.name}}</p>
+        <p>Nickname: {{racer.driver.nickname}}
         
         <p>Car Details:<br>
         Year: {{racer.car.year}}<br>

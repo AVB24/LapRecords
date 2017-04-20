@@ -11,7 +11,7 @@ import sys
 import os
 from datetime import datetime, timedelta
 from time import sleep
-from google.appengine.api import users
+from google.appengine.api import users, images
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
@@ -77,8 +77,10 @@ class Importer(webapp2.RequestHandler):
 							users.create_login_url("/"))
 		if not users.is_current_user_admin():
 			self.redirect('/')
+		drivers = Racer.all()
 		upload_url = blobstore.create_upload_url('/upload')
 		template_values = {
+			'drivers': drivers,
 			'user': user,
 			'upload_url': upload_url,
 			'greeting': greeting
@@ -88,6 +90,15 @@ class Importer(webapp2.RequestHandler):
 
 		# for b in blobstore.BlobInfo.all():
 		# 	self.response.out.write('<li><a href="/serve/%s' % str(b.key()) + '">' + str(b.filename) + '</a>')
+
+class PicuploadHandler(webapp2.RequestHandler):
+	def post(self):
+		driver_key = db.Key(self.request.get('driver'))
+		racer = Racer.get(driver_key)
+		racer.picture = db.Blob(self.request.get('img'))
+		racer.put()
+		self.redirect('/')
+
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
@@ -104,10 +115,11 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				continue
 			else:
 				line = line.replace('"','').split(',')
+				print line
 				time = line[5]
 				if time.count(':') == 0 and time:
 					time = '0:' + time
-				#print line
+				
 				pt = process_time(time)
 				s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
 				t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
@@ -118,7 +130,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
-				r = Racer.get_or_insert(key_name=line[3].replace(' ','.')+'@gmail.com', name=line[3], driver=users.User(line[3].replace(' ','.')+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
+				r = Racer.get_or_insert(key_name=line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com', name=line[3], driver=users.User(line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
 				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
 				best.put()
 				determine_best(pt, best)
@@ -233,19 +245,36 @@ class DriverHandler(webapp2.RequestHandler):
 	def get(self, driver):
 		racer = Racer.all().filter('name =', driver).fetch(1,0)[0]
 		print racer.name
+		nickname = racer.driver.nickname()
 		bl = BestLap.all().filter('driver =', racer).fetch(100,0)
 		template_values = {
 			'racer': racer,
+			'nickname': nickname,
 			'bestlaps': bl,
 			'bestlaps_count': len(bl) + 1
 		}
 		template = JINJA_ENVIRONMENT.get_template('templates/driver.html')
 		self.response.write(template.render(template_values))
 
+class ImageHandler (webapp.RequestHandler):
+  def get(self):
+	racer_key=self.request.get('key')
+	racer = db.get(racer_key)
+	if racer.picture:
+		img = images.Image(racer.picture)
+		img.resize(width=200, crop_to_fit=False, allow_stretch=False)
+		img.im_feeling_lucky()
+		rp = img.execute_transforms(output_encoding=images.JPEG)
+		self.response.headers['Content-Type'] = "image/png"
+		self.response.out.write(rp)
+	else:
+		self.error(404)
 
 app = webapp2.WSGIApplication([
 	('/', MainHandler),
 	('/driver/(.*)', DriverHandler),
 	('/bestlap', BestLapHandler),
 	('/importer', Importer),
+	('/picupload', PicuploadHandler),
+	('/imageit',ImageHandler),
 	('/upload', UploadHandler)], debug=True)
