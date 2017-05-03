@@ -105,7 +105,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
 		track = self.request.get('track')
 		bestlaps = {}
-		for bl in BestLap.all():
+		for bl in BestLap.all().filter('track =', track):
 			if bl.isBest is True:
 				bestlaps[bl.raceclass.name] = bl
 				# print 'heres a best'
@@ -143,7 +143,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com', name=line[3], driver=users.User(line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
 				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
-				# Need to figure out why we're getting multiple bests
+
 				if cl.name in bestlaps:
 					if pt < bestlaps[cl.name].time:
 						print str(pt) + ' is better than ' + bestlaps[cl.name].driver.name + 's time of ' + str(bestlaps[cl.name].time)
@@ -168,8 +168,6 @@ class MainHandler(webapp2.RequestHandler):
 			greeting = ("<a href=\"%s\">Sign in or register</a>." %
 							users.create_login_url("/"))
 
-		#cars = Car.all()
-		#racers = Racer.all()
 		bestlaps = BestLap.all()
 		tracks = Track.all()
 		template_values = {
