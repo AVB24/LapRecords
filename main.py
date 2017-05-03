@@ -50,7 +50,7 @@ def determine_best(time, entity):
 		logging.info( 'New Best')
 		entity.isBest = True
 	entity.put()
-	sleep(.3)
+	#sleep(.3)
 	#logging.info('Ending Logging for Racer:' + entity.driver.name)
 
 def prefetch_refprop(entities, prop):
@@ -101,7 +101,16 @@ class PicuploadHandler(webapp2.RequestHandler):
 
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
+
 	def post(self):
+		track = self.request.get('track')
+		bestlaps = {}
+		for bl in BestLap.all():
+			if bl.isBest is True:
+				bestlaps[bl.raceclass.name] = bl
+				# print 'heres a best'
+				# print bestlaps[bl.raceclass.name].key
+
 		upload_files = self.get_uploads('file')[0]
 		blob_key = upload_files.key()
 		blob_info = upload_files
@@ -121,8 +130,10 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					time = '0:' + time
 				
 				pt = process_time(time)
+				if not pt:
+					pt = 999.999
 				s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
-				t = self.request.get('track') #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
+				t = track #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
 				g = self.request.get('group')
 				sd = self.request.get('date')
 				dt = datetime.strptime(sd, '%Y-%m-%d')
@@ -132,11 +143,19 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
 				r = Racer.get_or_insert(key_name=line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com', name=line[3], driver=users.User(line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
 				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
+				# Need to figure out why we're getting multiple bests
+				if cl.name in bestlaps:
+					if pt < bestlaps[cl.name].time:
+						print str(pt) + ' is better than ' + bestlaps[cl.name].driver.name + 's time of ' + str(bestlaps[cl.name].time)
+						best.isBest = True
+						bestlaps[cl.name].isBest = False
+						bestlaps[cl.name].put()
+						bestlaps[cl.name] = best
+				else:
+					best.isBest = True
+					bestlaps[cl.name] = best
 				best.put()
-				determine_best(pt, best)
-				print best.driver.name, str(best.isBest)
 				count = count + 1
-		
 		self.redirect('/bestlap')
 
 class MainHandler(webapp2.RequestHandler):
