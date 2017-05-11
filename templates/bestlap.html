@@ -55,7 +55,7 @@ function drawTable() {
         data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
         data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
         data.setCell({{ loop.index }}, 4, t);
-        data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date }}');
+        data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date.strftime('%a, %b %d, %Y') }}');
     {% endfor %}
 
 

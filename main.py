@@ -23,36 +23,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
 	extensions=['jinja2.ext.autoescape'])
 
-def determine_best(time, entity):
-	#logging.info('Starting Logging for Racer:' + entity.driver.name)
-	race_class = entity.raceclass#.name
-	track = entity.track
-	bestlaps_query = BestLap.all()
-	bestlaps_query.filter("raceclass =", race_class)
-	bestlaps_query.filter("track =", track)
-	bestlaps_query.filter("isBest =", True)
-	q = bestlaps_query.fetch(1,0)
-	#logging.info('Query Count: ' + str(len(q)))
-	#logging.info('RaceClass: ' + entity.raceclass.name)
-	#logging.info('Track: ' + entity.track)
-	#logging.info('Time: ' +  str(time))
-	#logging.info('Entity Time: ' +  str(entity.time))
-	if q:
-		for lap in q:
-			#logging.info('Lap Driver:' + lap.driver.name)
-			#logging.info('Lap Driver Time: ' +  str(lap.time))
-			if time < lap.time:
-				lap.isBest = False
-				lap.put()
-				entity.isBest = True
-				logging.info('Changing Best from ' + lap.driver.name + ' to ' + entity.driver.name)
-	else:
-		logging.info( 'New Best')
-		entity.isBest = True
-	entity.put()
-	#sleep(.3)
-	#logging.info('Ending Logging for Racer:' + entity.driver.name)
-
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
 	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
@@ -62,9 +32,12 @@ def prefetch_refprop(entities, prop):
 
 def process_time(time):
 	if time:
-		t = datetime.strptime(time, "%M:%S.%f")
-		delta = timedelta(minutes=t.minute, seconds=t.second,microseconds=t.microsecond)
-		return float(delta.total_seconds())
+		if time != '0: ':
+			t = datetime.strptime(time, "%M:%S.%f")
+			delta = timedelta(minutes=t.minute, seconds=t.second,microseconds=t.microsecond)
+			return float(delta.total_seconds())
+		else:
+			return 0.000
 
 class Importer(webapp2.RequestHandler):
 	def get(self):
@@ -119,11 +92,14 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		count = 0
 		for line in blob_reader.readlines():
 
-			if count == 0:
+			if count == 0:		#This is to skip the header line on the input forms
 				count = count + 1
 				continue
 			else:
-				line = line.replace('"','').split(',')
+				line = line.replace('"','').replace(', ', ' ').strip().split(',')
+				for index, item in enumerate(line):
+					if item == '':
+						line[index] = ' '
 				print line
 				time = line[5]
 				if time.count(':') == 0 and time:
@@ -132,7 +108,6 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				pt = process_time(time)
 				if not pt:
 					pt = 999.999
-				s = Sponsor.get_or_insert(key_name=line[16], name=line[16])
 				t = track #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
 				g = self.request.get('group')
 				sd = self.request.get('date')
@@ -141,16 +116,26 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
 				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
 				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
-				r = Racer.get_or_insert(key_name=line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com', name=line[3], driver=users.User(line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com'), points=int(line[9]), car=c, sponsor=s,raceclass=cl).put()
+				if line[17]:
+					email = line[17]
+				else:
+					email = line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com'
+				r = Racer.get_or_insert(key_name=line[3].split()[0][0:1].lower() + line[3].split()[1].lower(), name=line[3], driver=users.User(email), points=int(line[9]), car=c, raceclass=cl)
+				if line[16]:
+					r.sponsor=Sponsor.get_or_insert(key_name=line[16], name=line[16])
+				if line[17]:
+					r.email = line[17]
+					r.driver = users.User(line[17])
+				r.put()
 				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
 
 				if cl.name in bestlaps:
 					if pt < bestlaps[cl.name].time:
 						print str(pt) + ' is better than ' + bestlaps[cl.name].driver.name + 's time of ' + str(bestlaps[cl.name].time)
-						best.isBest = True
-						bestlaps[cl.name].isBest = False
-						bestlaps[cl.name].put()
-						bestlaps[cl.name] = best
+						best.isBest = True					#Mark current record as best
+						bestlaps[cl.name].isBest = False	#Mark old record as not best
+						bestlaps[cl.name].put()				#Commit old record to db
+						bestlaps[cl.name] = best 			#Replace record in local dictionary with new best record for class
 				else:
 					best.isBest = True
 					bestlaps[cl.name] = best
