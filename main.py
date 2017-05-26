@@ -18,6 +18,7 @@ from google.appengine.ext.webapp import template
 from models import Track, Car, Race, Racer, Event, Sponsor, BestLap, RaceClass, Record
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
+import unicodedata
 
 JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -136,18 +137,19 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
 				c = Car.get_or_insert(key_name=car_make+car_model+car_year, make=car_make, model=car_model,year=car_year,color=car_color,number=carnum)
 				cl = RaceClass.get_or_insert(key_name=racer_class, name=racer_class)
-				if line[17]:
-					email = line[17]
+				if email:
+					email
+					#email = line[17]
 				else:
-					email = line[3].split()[0][0:1].lower() + line[3].split()[1].lower()+'@gmail.com'
-				r = Racer.get_or_insert(key_name=line[3].split()[0][0:1].lower() + line[3].split()[1].lower(), name=line[3], driver=users.User(email), points=int(line[9]), car=c, raceclass=cl)
-				if line[16]:
-					r.sponsor=Sponsor.get_or_insert(key_name=line[16], name=line[16])
-				if line[17]:
-					r.email = line[17]
-					r.driver = users.User(line[17])
+					email = racer_name.split()[0][0:1].lower() + racer_name.split()[1].lower()+'@gmail.com'
+				r = Racer.get_or_insert(key_name=racer_name.split()[0][0:1].lower() + racer_name.split()[1].lower(), email=email,name=racer_name, driver=users.User(email), points=int(line[9]), car=c, raceclass=cl)
+				if sponsor:
+					r.sponsor=Sponsor.get_or_insert(key_name=sponsor, name=sponsor)
+				#if line[17]:
+					#r.email = line[17]
+					#r.driver = users.User(line[17])
 				r.put()
-				best = BestLap.get_or_insert(key_name=sd+t+cl.name+line[3].replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
+				best = BestLap.get_or_insert(key_name=sd+t+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
 
 				if cl.name in bestlaps:
 					if pt < bestlaps[cl.name].time:
