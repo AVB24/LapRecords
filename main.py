@@ -38,6 +38,12 @@ def process_time(time):
 			return float(delta.total_seconds())
 		else:
 			return 0.000
+	else:
+		return 0.000
+
+def normalize_string(str):
+    normStr = unicodedata.normalize('NFKD',unicode(str,"ISO-8859-1")).encode("ascii","ignore")
+    return normStr
 
 class Importer(webapp2.RequestHandler):
 	def get(self):
@@ -81,8 +87,6 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		for bl in BestLap.all().filter('track =', track):
 			if bl.isBest is True:
 				bestlaps[bl.raceclass.name] = bl
-				# print 'heres a best'
-				# print bestlaps[bl.raceclass.name].key
 
 		upload_files = self.get_uploads('file')[0]
 		blob_key = upload_files.key()
@@ -91,7 +95,6 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		blob_reader = blobstore.BlobReader(blob_key)
 		count = 0
 		for line in blob_reader.readlines():
-
 			if count == 0:		#This is to skip the header line on the input forms
 				count = count + 1
 				continue
@@ -101,21 +104,38 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					if item == '':
 						line[index] = ' '
 				print line
-				time = line[5]
+				### Define vars based on columns
+				position = normalize_string(line[0])
+				point_in_class = normalize_string(line[1])
+				carnum = normalize_string(line[2])
+				racer_name = normalize_string(line[3])
+				racer_class = normalize_string(line[4])
+				time = normalize_string(line[5])
+				laps = normalize_string(line[6])
+				diff = normalize_string(line[7])
+				gap = normalize_string(line[8])
+				points = normalize_string(line[9])
+				car_make = normalize_string(line[10])
+				car_model = normalize_string(line[11])
+				car_color = normalize_string(line[12])
+				car_year = normalize_string(line[13])
+				city = normalize_string(line[14])
+				state = normalize_string(line[15])
+				sponsor = normalize_string(line[16])
+				email = normalize_string(line[17])
+
 				if time.count(':') == 0 and time:
 					time = '0:' + time
 				
 				pt = process_time(time)
-				if not pt:
-					pt = 999.999
 				t = track #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
 				g = self.request.get('group')
 				sd = self.request.get('date')
 				dt = datetime.strptime(sd, '%Y-%m-%d')
 				tr = Track.get_or_insert(key_name=t, name=t)
 				e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
-				c = Car.get_or_insert(key_name=line[10]+line[11]+line[13], make=line[10], model=line[11],year=line[13],color=line[12],number=line[2])
-				cl = RaceClass.get_or_insert(key_name=line[4], name=line[4])
+				c = Car.get_or_insert(key_name=car_make+car_model+car_year, make=car_make, model=car_model,year=car_year,color=car_color,number=carnum)
+				cl = RaceClass.get_or_insert(key_name=racer_class, name=racer_class)
 				if line[17]:
 					email = line[17]
 				else:
