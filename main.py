@@ -176,13 +176,39 @@ class MainHandler(webapp2.RequestHandler):
 		else:
 			greeting = ("<a href=\"%s\">Sign in or register</a>." %
 							users.create_login_url("/"))
+
+		if not users.is_current_user_admin():
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
+				("/laps","/bestlap"))
+		else:
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+				("/laps","/bestlap", "/importer"))
+		
+		template_values = {
+			'user': user,
+			'menu': menu,
+			'greeting': greeting
+		}
+		
+		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
+		self.response.write(template.render(template_values))
+
+class LapHandler(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
+							(user.nickname(), users.create_logout_url("/")))
+		else:
+			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+							users.create_login_url("/"))
 		
 		if not users.is_current_user_admin():
-			menu = ("<a href=\"%s\">Best Laps</a>" %
-							"/bestlap")
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
+							("/","/bestlap"))
 		else:
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-				("/bestlap", "/importer"))
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+				("/", "/bestlap", "/importer"))
 		bestlaps = BestLap.all()
 		tracks = Track.all()
 		template_values = {
@@ -194,7 +220,7 @@ class MainHandler(webapp2.RequestHandler):
 			'menu': menu
 		}
 		
-		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
+		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')
 		self.response.write(template.render(template_values))
 	
 	def post(self):
@@ -219,6 +245,9 @@ class MainHandler(webapp2.RequestHandler):
 			'tracks': tracks,
 			'greeting': greeting
 		}
+		
+		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')
+		self.response.write(template.render(template_values))
 
 
 class BestLapHandler(webapp2.RequestHandler):
@@ -232,10 +261,10 @@ class BestLapHandler(webapp2.RequestHandler):
 							users.create_login_url("/"))
 
 		if not users.is_current_user_admin():
-			menu = ("<a href=\"%s\">All Laps</a>" %	"/")
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>" %	("/", "/laps"))
 		else:
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-				("/", "/importer"))
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+				("/", "/laps","/importer"))
 		bestlaps_query = BestLap.all() #db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(100,0)
 		bestlaps_query.filter("isBest =", True)
 		bestlaps_query.order('time')
@@ -306,6 +335,7 @@ class Importer(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([
 	('/', MainHandler),
+	('/laps', LapHandler),
 	('/driver/(.*)', DriverHandler),
 	('/bestlap', BestLapHandler),
 	('/importer', Importer),

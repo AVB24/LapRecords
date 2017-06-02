@@ -38,6 +38,9 @@ handlers:
 
 - url: .*
   script: main.app
+
+- url: /laps/.*
+  script: main.app
   login: required
 
 libraries:
