@@ -14,4 +14,9 @@ indexes:
   properties:
   - name: isBest
   - name: time
+
+- kind: BestLap
+  properties:
+  - name: isBest
+  - name: time
     direction: desc
