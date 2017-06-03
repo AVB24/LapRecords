@@ -45,8 +45,11 @@ def process_time(time):
 		return 0.000
 
 def normalize_string(str):
-    normStr = unicodedata.normalize('NFKD',unicode(str,"ISO-8859-1")).encode("ascii","ignore")
-    return normStr
+	normStr = unicodedata.normalize('NFKD',unicode(str,"ISO-8859-1")).encode("ascii","ignore")
+	if normStr:
+		return normStr
+	else:
+		return "None"
 
 class PicuploadHandler(webapp2.RequestHandler):
 	def post(self):
