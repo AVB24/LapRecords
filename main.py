@@ -120,7 +120,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			point_in_class = row['PIC']
 			carnum = row['No.']
 			racer_name = normalize_string(row['Name'])
-			racer_class = row['Class']
+			racer_class = normalize_string(row['Class'])
 			diff = row['Diff']
 			gap = row['Gap']
 			points = row['Points']
