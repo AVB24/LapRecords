@@ -157,13 +157,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			best = BestLap.get_or_insert(key_name=sd+t+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
 
 			if cl.name in bestlaps:
-				if pt < bestlaps[cl.name].time:
+				if pt < bestlaps[cl.name].time and pt != 0.0:
 					print str(pt) + ' is better than ' + bestlaps[cl.name].driver.name + 's time of ' + str(bestlaps[cl.name].time)
 					best.isBest = True					#Mark current record as best
 					bestlaps[cl.name].isBest = False	#Mark old record as not best
 					bestlaps[cl.name].put()				#Commit old record to db
 					bestlaps[cl.name] = best 			#Replace record in local dictionary with new best record for class
-			else:
+			elif pt != 0.0:
 				best.isBest = True
 				bestlaps[cl.name] = best
 			best.put()
@@ -217,7 +217,7 @@ class LapHandler(webapp2.RequestHandler):
 		template_values = {
 			'user': user,
 			'bestlaps': bestlaps,
-			'bestlaps_count': bestlaps.count()+1,
+			'bestlaps_count': bestlaps.count(limit=10000)+1,
 			'tracks': tracks,
 			'greeting': greeting,
 			'menu': menu
@@ -239,7 +239,7 @@ class LapHandler(webapp2.RequestHandler):
 		bestlaps_query = BestLap.all()
 		if track != 'all':
 			bestlaps_query.filter('track =', track)
-		bestlaps = bestlaps_query.fetch(1000,0)
+		bestlaps = bestlaps_query.fetch(5000,0)
 		tracks = Track.all()
 		template_values = {
 			'user': user,
@@ -271,7 +271,7 @@ class BestLapHandler(webapp2.RequestHandler):
 		bestlaps_query = BestLap.all() #db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(100,0)
 		bestlaps_query.filter("isBest =", True)
 		bestlaps_query.order('time')
-		bestlaps = bestlaps_query.fetch(1000, 0)
+		bestlaps = bestlaps_query.fetch(5000, 0)
 		tracks = Track.all()#db.GqlQuery('SELECT DISTINCT track from BestLap').fetch(100,0)
 		template_values = {
 			'user': user,
@@ -299,7 +299,7 @@ class BestLapHandler(webapp2.RequestHandler):
 		bestlaps_query.filter("isBest =", True)
 		if track != 'all':
 			bestlaps_query.filter('track =', track)
-		bestlaps = bestlaps_query.fetch(1000,0)
+		bestlaps = bestlaps_query.fetch(5000,0)
 		tracks = Track.all()
 		template_values = {
 			'user': user,
