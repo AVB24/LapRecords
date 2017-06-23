@@ -11,7 +11,7 @@ import sys
 import os
 from datetime import datetime, timedelta
 from time import sleep
-from google.appengine.api import users, images
+from google.appengine.api import users, images, memcache
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template
@@ -26,6 +26,42 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	extensions=['jinja2.ext.autoescape'])
 
 # Helpers
+class DataServices():
+	all_laps = None
+	laps_count = None
+
+	def get_all_laps(self):
+		all_laps = memcache.get('allLaps')
+		if all_laps is None:
+			all_laps = db.GqlQuery('SELECT * from BestLap ORDER BY time ASC')
+			try:
+				added = memcache.add('allLaps', all_laps, 3600)
+				if not added:
+					logging.error('Memcache set failed.')
+			except ValueError:
+				logging.error('Memcache set failed - data larger than 1MB')
+		else:
+			logging.info("Using Memcache")
+				
+		logging.info("I got to get_all_laps")
+		logging.info(all_laps)
+		return all_laps
+
+	def get_best_laps(self,numFirstRecord,numLastRecord):
+		retBestLaps = db.GqlQuery('SELECT * from BestLap WHERE isBest = True ORDER BY time ASC').fetch(numLastRecord,numFirstRecord)
+		return retBestLaps
+	
+	def get_laps(self, numFirstRecord,numLastRecord):
+		if self.all_laps is None:
+			all_laps = self.get_all_laps()
+		ret_laps = all_laps.fetch(numLastRecord,numFirstRecord)
+		#retLaps = db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(numLastRecord,numFirstRecord)
+		logging.info("I got to get_laps")
+		logging.info(ret_laps)
+		return ret_laps
+
+data_services = DataServices()
+
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
 	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
@@ -89,7 +125,6 @@ class ImageHandler (webapp.RequestHandler):
 		self.error(404)
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
-
 	def post(self):
 		track = self.request.get('track')
 		bestlaps = {}
@@ -119,7 +154,6 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			position = row['Pos']
 			point_in_class = row['PIC']
 			carnum = row['No.']
-			racer_name = normalize_string(row['Name'])
 			racer_class = normalize_string(row['Class'])
 			diff = row['Diff']
 			gap = row['Gap']
@@ -212,12 +246,13 @@ class LapHandler(webapp2.RequestHandler):
 		else:
 			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
 				("/", "/bestlap", "/importer"))
-		bestlaps = BestLap.all()
+		bestlaps = data_services.get_laps(0, 12)
+		
 		tracks = Track.all()
 		template_values = {
 			'user': user,
 			'bestlaps': bestlaps,
-			'bestlaps_count': bestlaps.count(limit=10000)+1,
+			'bestlaps_count': 25,
 			'tracks': tracks,
 			'greeting': greeting,
 			'menu': menu
@@ -239,7 +274,7 @@ class LapHandler(webapp2.RequestHandler):
 		bestlaps_query = BestLap.all()
 		if track != 'all':
 			bestlaps_query.filter('track =', track)
-		bestlaps = bestlaps_query.fetch(5000,0)
+		bestlaps = bestlaps_query.fetch(10000,0)
 		tracks = Track.all()
 		template_values = {
 			'user': user,
@@ -337,7 +372,7 @@ class Importer(webapp2.RequestHandler):
 		# 	self.response.out.write('<li><a href="/serve/%s' % str(b.key()) + '">' + str(b.filename) + '</a>')
 
 app = webapp2.WSGIApplication([
-	('/', MainHandler),
+	('/', MainHandler, DataServices),
 	('/laps', LapHandler),
 	('/driver/(.*)', DriverHandler),
 	('/bestlap', BestLapHandler),
