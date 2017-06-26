@@ -18,6 +18,7 @@ from google.appengine.ext.webapp import template
 from models import Track, Car, Race, Racer, Event, Sponsor, BestLap, RaceClass, Record
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
+from paging import PagedQuery
 import unicodedata
 import csv
 
@@ -52,13 +53,26 @@ class DataServices():
 		return retBestLaps
 	
 	def get_laps(self, numFirstRecord,numLastRecord):
-		if self.all_laps is None:
-			all_laps = self.get_all_laps()
-		ret_laps = all_laps.fetch(numLastRecord,numFirstRecord)
+		lap_data = memcache.get('lap_data')
+		if lap_data is None:
+			lap_data = BestLap.all().fetch(numLastRecord,numFirstRecord)
+			try:
+				added = memcache.add('lap_data', lap_data, 3600)
+				if not added:
+					logging.error('Memcache set failed.')
+			except ValueError:
+				logging.error('Memcache set failed - data larger than 1MB')
+		else:
+			logging.info("Using Memcache")
+
+		#ret_laps = all_laps.fetch(numLastRecord,numFirstRecord)
 		#retLaps = db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(numLastRecord,numFirstRecord)
 		logging.info("I got to get_laps")
-		logging.info(ret_laps)
-		return ret_laps
+		logging.info(lap_data)
+		return lap_data
+	
+	def get_total_pages(self, pageSize):
+		return page_count
 
 data_services = DataServices()
 
@@ -233,6 +247,7 @@ class MainHandler(webapp2.RequestHandler):
 class LapHandler(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
+		page_size = 25
 		if user:
 			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
 							(user.nickname(), users.create_logout_url("/")))
@@ -246,13 +261,16 @@ class LapHandler(webapp2.RequestHandler):
 		else:
 			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
 				("/", "/bestlap", "/importer"))
-		bestlaps = data_services.get_laps(0, 12)
+		#bestlaps = data_services.get_laps(0, 12)
+		myPagedQuery = PagedQuery(BestLap.all(), page_size)
+		myResults = myPagedQuery.fetch_page()
 		
 		tracks = Track.all()
 		template_values = {
 			'user': user,
-			'bestlaps': bestlaps,
-			'bestlaps_count': 25,
+			'bestlaps': myResults,
+			'page_size': page_size,
+			'page_count': myPagedQuery.page_count(),
 			'tracks': tracks,
 			'greeting': greeting,
 			'menu': menu
@@ -261,7 +279,7 @@ class LapHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')
 		self.response.write(template.render(template_values))
 	
-	def post(self):
+	def post(self, page_size, numFirstRecord,numLastRecord):
 		user = users.get_current_user()
 		if user:
 			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
@@ -279,7 +297,7 @@ class LapHandler(webapp2.RequestHandler):
 		template_values = {
 			'user': user,
 			'bestlaps': bestlaps,
-			'bestlaps_count': len(bestlaps)+1,
+			'bestlaps_count': myPagedQuery.page_count(),
 			'tracks': tracks,
 			'greeting': greeting
 		}

@@ -37,7 +37,8 @@
 google.load('visualization', '1', {'packages':['controls'], callback: drawTable});
 function drawTable() {
     var data = new google.visualization.DataTable();
-    data.addRows({{ bestlaps_count }});
+    var page_size = {{ page_size }}
+    data.addRows(page_size);
     data.addColumn('string', 'Car #');
     data.addColumn('string', 'Racer');
     data.addColumn('string', 'Race Class');
@@ -46,12 +47,12 @@ function drawTable() {
     data.addColumn('string', 'Date');
     	
     {% for bestlap in bestlaps %}
-        //var t = makeTime({{ bestlap.time }});
+        var t = makeTime({{ bestlap.time }});
         data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
         data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
         data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
         data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
-        data.setCell({{ loop.index }}, 4, 'A');
+        data.setCell({{ loop.index }}, 4, 't');
         data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date.strftime('%a, %b %d, %Y') }}');
     {% endfor %}
 
@@ -96,7 +97,7 @@ function drawTable() {
         containerId: 'table_div',
         options: {
             page: 'enable',
-            pageSize: '25',
+            pageSize: page_size,
             showRowNumber: false,
             allowHtml: true
         }
@@ -112,7 +113,6 @@ function drawTable() {
 <body>
     {{ greeting }}
     {{ menu }}
-    {{ bestlaps_count}}
     <hr>
     <div id="w">
         <div id="content">
