@@ -126,7 +126,7 @@ function drawTable() {
             page: 'event',
             pageSize: page_size,
             pagingButtons: page_count,
-            startPage: page_num,
+            //startPage: page_num,
             showRowNumber: false,
             allowHtml: true
         }
@@ -136,12 +136,21 @@ function drawTable() {
     
 
     function onReady() {
-        google.visualization.events.addListener(table.getChart(),'page', myPageEventHandler);
+        google.visualization.events.addListener(table.getChart(),'page', changePage);
     }
-    function myPageEventHandler(e) {
-        console.log('The user is navigating to page ' + e['page']);
+    function changePage(e) {
+        alert('The user is navigating to page ' + e['page']);
         console.log(page_size);
-        post('/laps', {page_num: e['page'], page_size: page_size});
+        post('/laps', {page_num: e['page'], page_size: page_size, function: 'changePage'});
+        dashboard.draw(data);
+    }
+
+    function submitQuery(e) {
+        post('/laps', {page_num: e['page'], page_size: page_size, 
+            racer:racerFilter.getState().value,
+            race_class: classFilter.getState().value,
+            track: trackFilter.getState().value,
+            function: 'submitQuery'});
     }
 
     dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
@@ -165,10 +174,14 @@ function drawTable() {
                 <div class='inline'><div id="racer_filter"></div></div>
                 <div class='inline'><div id="class_filter"></div></div>
                 <div class='inline'><div id="track_filter"></div></div>
+                <div class='inline'><button style="margin: 1em 1em 1em 2em" onclick="submitQuery();">
+                Search
+              </button></div>
                 <br>
                 <br>
                 <div id="table_div"></div>
             </div>
+            Page {{ page_num + 1}} of {{page_count}}
         </div>
     </div>
 </body>

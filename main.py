@@ -270,7 +270,7 @@ class LapHandler(webapp2.RequestHandler):
 		template_values = {
 			'user': user,
 			'laps': myResults,
-			'laps_count': BestLap.all().count(),
+			'laps_count': BestLap.all().count() + 1,
 			'page_size': page_size + 1,
 			'page_count': myPagedQuery.page_count(),
 			'page_num': 0,
@@ -306,7 +306,7 @@ class LapHandler(webapp2.RequestHandler):
 		template_values = {
 			'user': user,
 			'laps': myResults,
-			'laps_count': BestLap.all().count(),
+			'laps_count': BestLap.all().count() + 1,
 			'page_size': page_size + 1,
 			'page_count': myPagedQuery.page_count(),
 			'page_num': page_num,
