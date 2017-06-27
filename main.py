@@ -168,6 +168,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			position = row['Pos']
 			point_in_class = row['PIC']
 			carnum = row['No.']
+			racer_name = normalize_string(row['Name'])
 			racer_class = normalize_string(row['Class'])
 			diff = row['Diff']
 			gap = row['Gap']
@@ -196,7 +197,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			if email:
 				email
 			else:
-				email = racer_name.split()[0][0:1].lower() + racer_name.split()[1].lower()+'@gmail.com'
+				email = racer_name.split()[0].lower() + racer_name.split()[1].lower()+'@gmail.com'
 			r = Racer.get_or_insert(key_name=racer_name.split()[0][0:1].lower() + racer_name.split()[1].lower(), email=email,name=racer_name, driver=users.User(email), points=int(points), car=c, raceclass=cl)
 			if sponsor:
 				r.sponsor=Sponsor.get_or_insert(key_name=sponsor, name=sponsor)
@@ -268,9 +269,11 @@ class LapHandler(webapp2.RequestHandler):
 		tracks = Track.all()
 		template_values = {
 			'user': user,
-			'bestlaps': myResults,
-			'page_size': page_size,
+			'laps': myResults,
+			'laps_count': BestLap.all().count(),
+			'page_size': page_size + 1,
 			'page_count': myPagedQuery.page_count(),
+			'page_num': 0,
 			'tracks': tracks,
 			'greeting': greeting,
 			'menu': menu
@@ -279,27 +282,37 @@ class LapHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')
 		self.response.write(template.render(template_values))
 	
-	def post(self, page_size, numFirstRecord,numLastRecord):
+	def post(self):
 		user = users.get_current_user()
+		page_size = int(self.request.get('page_size'))
+		page_num = int(self.request.get('page_num'))
 		if user:
 			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
 							(user.nickname(), users.create_logout_url("/")))
 		else:
 			greeting = ("<a href=\"%s\">Sign in or register</a>." %
 							users.create_login_url("/"))
-		track = self.request.get('track')
 
-		bestlaps_query = BestLap.all()
-		if track != 'all':
-			bestlaps_query.filter('track =', track)
-		bestlaps = bestlaps_query.fetch(10000,0)
+		if not users.is_current_user_admin():
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
+							("/","/bestlap"))
+		else:
+			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+				("/", "/bestlap", "/importer"))
+
+		myPagedQuery = PagedQuery(BestLap.all(), page_size)
+		myResults = myPagedQuery.fetch_page(page_num + 1)
 		tracks = Track.all()
 		template_values = {
 			'user': user,
-			'bestlaps': bestlaps,
-			'bestlaps_count': myPagedQuery.page_count(),
+			'laps': myResults,
+			'laps_count': BestLap.all().count(),
+			'page_size': page_size + 1,
+			'page_count': myPagedQuery.page_count(),
+			'page_num': page_num,
 			'tracks': tracks,
-			'greeting': greeting
+			'greeting': greeting,
+			'menu': menu
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')

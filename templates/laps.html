@@ -29,16 +29,43 @@
         ret += "" + secs.toFixed(3);
         return ret;
     };
+
+    function post(path, params, method) {
+        method = method || "post"; // Set method to post by default if not specified.
+
+        // The rest of this code assumes you are not using a library.
+        // It can be made less wordy if you use one.
+        var form = document.createElement("form");
+        form.setAttribute("method", method);
+        form.setAttribute("action", path);
+
+        for(var key in params) {
+            if(params.hasOwnProperty(key)) {
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
+                hiddenField.setAttribute("name", key);
+                hiddenField.setAttribute("value", params[key]);
+
+                form.appendChild(hiddenField);
+            }
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    };
 // Load the Visualization API and the piechart package.
 //google.load('visualization', '1', {'packages':['table']});
 
 // Set a callback to run when the Google Visualization API is loaded.
 //google.setOnLoadCallback(drawTable);
 google.load('visualization', '1', {'packages':['controls'], callback: drawTable});
+
 function drawTable() {
     var data = new google.visualization.DataTable();
     var page_size = {{ page_size }}
-    data.addRows(page_size);
+    var page_count = {{ page_count }}
+    var page_num = {{ page_num }}
+    data.addRows( {{ laps_count}});
     data.addColumn('string', 'Car #');
     data.addColumn('string', 'Racer');
     data.addColumn('string', 'Race Class');
@@ -46,14 +73,14 @@ function drawTable() {
     data.addColumn('string', 'Best Lap');
     data.addColumn('string', 'Date');
     	
-    {% for bestlap in bestlaps %}
-        var t = makeTime({{ bestlap.time }});
-        data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-        data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
-        data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
-        data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
-        data.setCell({{ loop.index }}, 4, 't');
-        data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date.strftime('%a, %b %d, %Y') }}');
+    {% for lap in laps %}
+        var t = makeTime({{ lap.time }});
+        data.setCell({{ loop.index }}, 0, '{{ lap.driver.car.number }}');
+        data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ lap.driver.name }}">{{ lap.driver.name }}</a>');
+        data.setCell({{ loop.index }}, 2, '{{ lap.raceclass.name }}');
+        data.setCell({{ loop.index }}, 3, '{{ lap.track }}');
+        data.setCell({{ loop.index }}, 4, t);
+        data.setCell({{ loop.index }}, 5, '{{ lap.event.date.strftime('%a, %b %d, %Y') }}');
     {% endfor %}
 
     var dashboard = new google.visualization.Dashboard(document.querySelector('#dashboard'));
@@ -96,16 +123,32 @@ function drawTable() {
         chartType: 'Table',
         containerId: 'table_div',
         options: {
-            page: 'enable',
+            page: 'event',
             pageSize: page_size,
+            pagingButtons: page_count,
+            startPage: page_num,
             showRowNumber: false,
             allowHtml: true
         }
     });
 
+    google.visualization.events.addListener(dashboard,'ready', onReady);
+    
+
+    function onReady() {
+        google.visualization.events.addListener(table.getChart(),'page', myPageEventHandler);
+    }
+    function myPageEventHandler(e) {
+        console.log('The user is navigating to page ' + e['page']);
+        console.log(page_size);
+        post('/laps', {page_num: e['page'], page_size: page_size});
+    }
+
     dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
     dashboard.draw(data);
 }
+
+
 </script>
 <p align="center"><img src="/images/0.gif" alt="Banner" align="middle"></p>
 <hr>
@@ -113,6 +156,8 @@ function drawTable() {
 <body>
     {{ greeting }}
     {{ menu }}
+    {{ laps_count}}
+    {{ page_count}}
     <hr>
     <div id="w">
         <div id="content">
