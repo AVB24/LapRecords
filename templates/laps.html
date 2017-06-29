@@ -141,7 +141,7 @@ function drawTable() {
     function changePage(e) {
         alert('The user is navigating to page ' + e['page']);
         console.log(page_size);
-        post('/laps', {page_num: e['page'], page_size: page_size, function: 'changePage'});
+        post('/laps', {page_num: e['page'] + 1, page_size: page_size, function: 'changePage'});
         dashboard.draw(data);
     }
 

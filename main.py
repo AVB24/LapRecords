@@ -74,7 +74,41 @@ class DataServices():
 	def get_total_pages(self, pageSize):
 		return page_count
 
+class UIServices():
+	def get_greeting(self, user):
+		if user:
+			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
+							(user.nickname(), users.create_logout_url("/")))
+		else:
+			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+							users.create_login_url("/"))
+		return greeting
+	
+	def get_menu(self, page):
+		if not users.is_current_user_admin():
+			if page == "lap":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
+					("/","/bestlap"))
+			elif page == "best":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>" %	("/", "/laps"))
+			elif page == "main":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
+					("/laps","/bestlap"))
+				
+		else:
+			if page == "lap":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/", "/bestlap", "/importer"))
+			elif page == "best":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/", "/laps","/importer"))
+			elif page == "main":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/laps","/bestlap", "/importer"))
+		return menu
+
 data_services = DataServices()
+ui_services = UIServices()
 
 def prefetch_refprop(entities, prop):
 	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
@@ -222,19 +256,8 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 class MainHandler(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
-		if user:
-			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
-							(user.nickname(), users.create_logout_url("/")))
-		else:
-			greeting = ("<a href=\"%s\">Sign in or register</a>." %
-							users.create_login_url("/"))
-
-		if not users.is_current_user_admin():
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
-				("/laps","/bestlap"))
-		else:
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-				("/laps","/bestlap", "/importer"))
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("main")		
 		
 		template_values = {
 			'user': user,
@@ -249,19 +272,9 @@ class LapHandler(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		page_size = 25
-		if user:
-			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
-							(user.nickname(), users.create_logout_url("/")))
-		else:
-			greeting = ("<a href=\"%s\">Sign in or register</a>." %
-							users.create_login_url("/"))
-		
-		if not users.is_current_user_admin():
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
-							("/","/bestlap"))
-		else:
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-				("/", "/bestlap", "/importer"))
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("lap")	
+
 		#bestlaps = data_services.get_laps(0, 12)
 		myPagedQuery = PagedQuery(BestLap.all(), page_size)
 		myResults = myPagedQuery.fetch_page()
@@ -284,37 +297,50 @@ class LapHandler(webapp2.RequestHandler):
 	
 	def post(self):
 		user = users.get_current_user()
-		page_size = int(self.request.get('page_size'))
-		page_num = int(self.request.get('page_num'))
-		if user:
-			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
-							(user.nickname(), users.create_logout_url("/")))
-		else:
-			greeting = ("<a href=\"%s\">Sign in or register</a>." %
-							users.create_login_url("/"))
+		function = self.request.get('function')
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("best")	
 
-		if not users.is_current_user_admin():
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
-							("/","/bestlap"))
-		else:
-			menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-				("/", "/bestlap", "/importer"))
-
-		myPagedQuery = PagedQuery(BestLap.all(), page_size)
-		myResults = myPagedQuery.fetch_page(page_num + 1)
-		tracks = Track.all()
-		template_values = {
-			'user': user,
-			'laps': myResults,
-			'laps_count': BestLap.all().count() + 1,
-			'page_size': page_size + 1,
-			'page_count': myPagedQuery.page_count(),
-			'page_num': page_num,
-			'tracks': tracks,
-			'greeting': greeting,
-			'menu': menu
-		}
 		
+		if function == 'changePage':
+			page_size = int(self.request.get('page_size'))
+			page_num = int(self.request.get('page_num')) + 1
+			myPagedQuery = PagedQuery(BestLap.all(), page_size)
+			myResults = myPagedQuery.fetch_page(page_num)
+			tracks = Track.all()
+			template_values = {
+				'user': user,
+				'laps': myResults,
+				'laps_count': BestLap.all().count() + 1,
+				'page_size': page_size + 1,
+				'page_count': myPagedQuery.page_count(),
+				'page_num': page_num,
+				'tracks': tracks,
+				'greeting': greeting,
+				'menu': menu
+			}
+		elif function == 'submitQuery':
+			page_size = int(self.request.get('page_size'))
+			page_num = int(self.request.get('page_num')) + 1
+			racer = self.request.get('racer')
+			race_class = self.request.get('race_class')
+			track = self.request.get('track')
+			myQuery = BestLap.all().filter('driver.name', racer).filter('raceclass.name', race_class).filter('track', track)
+			myPagedQuery = PagedQuery(myQuery, page_size)
+			myResults = myPagedQuery.fetch_page(page_num)
+			tracks = Track.all()
+			template_values = {
+				'user': user,
+				'laps': myResults,
+				'laps_count': BestLap.all().count() + 1,
+				'page_size': page_size + 1,
+				'page_count': myPagedQuery.page_count(),
+				'page_num': page_num,
+				'tracks': tracks,
+				'greeting': greeting,
+				'menu': menu
+			}
+
 		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')
 		self.response.write(template.render(template_values))
 
