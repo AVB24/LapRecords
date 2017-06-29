@@ -73,6 +73,24 @@ class DataServices():
 	
 	def get_total_pages(self, pageSize):
 		return page_count
+	
+	def set_data_mem(self, name, data):
+		try:
+			added = memcache.add(name, data, 3600)
+			if not added:
+				logging.error('Memcache set failed.')
+		except ValueError:
+			logging.error('Memcache set failed - data larger than 1MB')
+	
+	def get_data_mem(self, name):
+		get_data = memcache.get(name)
+		if get_data is None:
+			logging.error("Nothing in Memory")
+			#set_data_mem(name, data)
+		else:
+			logging.info("Using MemCache")
+		
+		return get_data
 
 class UIServices():
 	def get_greeting(self, user):
@@ -87,24 +105,30 @@ class UIServices():
 	def get_menu(self, page):
 		if not users.is_current_user_admin():
 			if page == "lap":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
-					("/","/bestlap"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>" %
+					("/","/bestlap", "/search"))
 			elif page == "best":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>" %	("/", "/laps"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>" %	("/", "/laps", "/search"))
 			elif page == "main":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
-					("/laps","/bestlap"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>" %
+					("/laps","/bestlap", "/search"))
+			elif page == "search":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
+					("/", "/laps","/bestlap",))
 				
 		else:
 			if page == "lap":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/", "/bestlap", "/importer"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/", "/bestlap","/search","/importer"))
 			elif page == "best":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/", "/laps","/importer"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/", "/laps","/search","/importer"))
 			elif page == "main":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a> &nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/laps","/bestlap", "/importer"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/laps","/bestlap", "/search","/importer"))
+			elif page == "search":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Main</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
+					("/","/laps","/bestlap","/importer"))
 		return menu
 
 data_services = DataServices()
@@ -250,7 +274,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				best.isBest = True
 				bestlaps[cl.name] = best
 			best.put()
-		self.redirect('/bestlap')
+		self.redirect('/')
 
 # Page Handlers
 class MainHandler(webapp2.RequestHandler):
@@ -269,12 +293,12 @@ class MainHandler(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 
 class LapHandler(webapp2.RequestHandler):
+
 	def get(self):
 		user = users.get_current_user()
-		page_size = 25
+		page_size = 100
 		greeting = ui_services.get_greeting(user)
 		menu = ui_services.get_menu("lap")	
-
 		#bestlaps = data_services.get_laps(0, 12)
 		myPagedQuery = PagedQuery(BestLap.all(), page_size)
 		myResults = myPagedQuery.fetch_page()
@@ -301,45 +325,22 @@ class LapHandler(webapp2.RequestHandler):
 		greeting = ui_services.get_greeting(user)
 		menu = ui_services.get_menu("best")	
 
-		
-		if function == 'changePage':
-			page_size = int(self.request.get('page_size'))
-			page_num = int(self.request.get('page_num')) + 1
-			myPagedQuery = PagedQuery(BestLap.all(), page_size)
-			myResults = myPagedQuery.fetch_page(page_num)
-			tracks = Track.all()
-			template_values = {
-				'user': user,
-				'laps': myResults,
-				'laps_count': BestLap.all().count() + 1,
-				'page_size': page_size + 1,
-				'page_count': myPagedQuery.page_count(),
-				'page_num': page_num,
-				'tracks': tracks,
-				'greeting': greeting,
-				'menu': menu
-			}
-		elif function == 'submitQuery':
-			page_size = int(self.request.get('page_size'))
-			page_num = int(self.request.get('page_num')) + 1
-			racer = self.request.get('racer')
-			race_class = self.request.get('race_class')
-			track = self.request.get('track')
-			myQuery = BestLap.all().filter('driver.name', racer).filter('raceclass.name', race_class).filter('track', track)
-			myPagedQuery = PagedQuery(myQuery, page_size)
-			myResults = myPagedQuery.fetch_page(page_num)
-			tracks = Track.all()
-			template_values = {
-				'user': user,
-				'laps': myResults,
-				'laps_count': BestLap.all().count() + 1,
-				'page_size': page_size + 1,
-				'page_count': myPagedQuery.page_count(),
-				'page_num': page_num,
-				'tracks': tracks,
-				'greeting': greeting,
-				'menu': menu
-			}
+		page_size = int(self.request.get('page_size'))
+		page_num = int(self.request.get('page_num'))
+		myPagedQuery = PagedQuery(BestLap.all(), page_size)
+		myResults = myPagedQuery.fetch_page(page_num)
+		tracks = Track.all()
+		template_values = {
+			'user': user,
+			'laps': myResults,
+			'page_size': page_size + 1,
+			'page_count': myPagedQuery.page_count(),
+			'page_num': page_num-1,
+			'tracks': tracks,
+			'greeting': greeting,
+			'menu': menu
+		}
+
 
 		template = JINJA_ENVIRONMENT.get_template('templates/laps.html')
 		self.response.write(template.render(template_values))
@@ -403,6 +404,81 @@ class BestLapHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
 		self.response.write(template.render(template_values))
 
+class searchLapHandler(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		function = self.request.get('function')
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("search")
+
+		template_values = {
+			'user': user,
+			'menu': menu,
+			'greeting': greeting,
+			'page_size': 0,
+			'page_count': 0,
+			'page_num': 0
+		}
+
+		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
+		self.response.write(template.render(template_values))
+	def post(self):
+		user = users.get_current_user()
+		function = self.request.get('function')
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("search")
+		#logging.info(function)
+
+		racer = self.request.get('racer')
+		race_class = self.request.get('race_class')
+		track = self.request.get('track')
+		
+		#logging.info(racer)
+		#logging.info(race_class)
+		#logging.info(track)
+		
+		if function == "search":
+			page_num = 1
+			page_size = 5
+			myQuery = BestLap.all()
+			if racer:
+				driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
+				myQuery.filter('driver', driver)
+			if race_class:
+				race_class = RaceClass.all().filter('name =', race_class).fetch(1,0)[0]
+				myQuery.filter('raceclass', race_class)
+			if track:
+				myQuery.filter('track', track)
+			
+			data_services.set_data_mem('myQuery', myQuery)
+			myPagedQuery = PagedQuery(myQuery, page_size)
+			page_count = myPagedQuery.page_count()
+			myResults = myPagedQuery.fetch_page()
+		elif function == "changePage":
+			myQuery = data_services.get_data_mem('myQuery')
+			page_num = int(self.request.get('page_num'))
+			page_size = int(self.request.get('page_size'))
+			myPagedQuery = PagedQuery(myQuery, page_size)
+			page_count = myPagedQuery.page_count()
+			myResults = myPagedQuery.fetch_page(page_num)
+
+		logging.info(myResults)
+		tracks = Track.all()
+		template_values = {
+			'user': user,
+			'laps': myResults,
+			#'laps_count': BestLap.all().count() + 1,
+			'page_size': page_size + 1,
+			'page_count': page_count,
+			'page_num': page_num-1,
+			'tracks': tracks,
+			'greeting': greeting,
+			'menu': menu
+		}
+
+		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
+		self.response.write(template.render(template_values))
+
 class Importer(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -433,6 +509,7 @@ app = webapp2.WSGIApplication([
 	('/laps', LapHandler),
 	('/driver/(.*)', DriverHandler),
 	('/bestlap', BestLapHandler),
+	('/search', searchLapHandler),
 	('/importer', Importer),
 	('/picupload', PicuploadHandler),
 	('/imageit',ImageHandler),

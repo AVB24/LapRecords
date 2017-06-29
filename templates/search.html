@@ -64,10 +64,11 @@ google.load('visualization', '1', {'packages':['controls'], callback: drawTable}
 
 function drawTable() {
     var data = new google.visualization.DataTable();
-    var page_size = {{ page_size }}
-    var page_count = {{ page_count }}
-    var page_num = {{ page_num }}
+    var page_size = {{ page_size }};
+    var page_count = {{ page_count }};
+    var page_num = {{ page_num }};
     var offset = (page_size * (page_num+1)) - page_size;
+
     data.addRows({{ page_size}}*{{page_count}});
     data.addColumn('string', 'Car #');
     data.addColumn('string', 'Racer');
@@ -148,7 +149,7 @@ function drawTable() {
         console.log(page_size);
         page_num = e['page'] + 1;
         alert('The user is navigating to page ' + page_num);
-        post('/laps', {page_num: page_num, page_size: page_size-1, function: 'changePage'});
+        post('/search', {page_num: page_num, page_size: page_size-1, function: 'changePage'});
         table.draw(data);
     }
 }
@@ -163,6 +164,14 @@ function drawTable() {
     {{ menu }}
     <hr>
     <div id="w">
+        <center><form action="/search" method="POST" enctype="multipart/form-data" >
+            <div class='inline'>Racer Name: <input type="text" name="racer"></div>
+            <div class='inline'>Race Class: <input type="text" name="race_class"></div>
+            <div class='inline'>Track Name: <input type="text" name="track"></div>
+            <input type="hidden" name="function" value="search">
+            <input type="submit" name="submit" value="Submit">
+        </form></center>
+        <hr>
         <div id="content">
             <div id="dashboard" align="center">
                 <div class='inline'><div id="racer_filter"></div></div>
@@ -172,9 +181,8 @@ function drawTable() {
                 <br>
                 <div id="table_div"></div>
             </div>
-            Page {{page_num + 1}} of {{page_count}}
+            Page {{ page_num}} of {{page_count}}
         </div>
-
     </div>
 </body>
 </html>
