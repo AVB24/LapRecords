@@ -192,7 +192,7 @@ class PagedQuery(object):
 		or the maximum number of pages returned by fetch_page(), whichever is greater.
 		'''
 		if not self._page_count:
-			result_count = self._query.count()
+			result_count = self._query.count(limit=99999)
 			
 			(full_pages, remainder) = divmod(result_count, self.page_size)
 			self._page_count = full_pages if remainder == 0 else full_pages + 1
@@ -282,7 +282,7 @@ class PagedQuery(object):
 		self._query.ancestor(ancestor)
 		return self
 	
-	def count(self, limit=1000):
+	def count(self, limit=99999):
 		'''Returns the number of results this query fetches. This method should
 		behave identically to the method of the same name of db.Query and 
 		db.GqlQuery

@@ -28,6 +28,31 @@ function makeTime(time) {
     return ret;
 };
 
+    function post(path, params, method) {
+        method = method || "post"; // Set method to post by default if not specified.
+
+        // The rest of this code assumes you are not using a library.
+        // It can be made less wordy if you use one.
+        var form = document.createElement("form");
+        form.setAttribute("method", method);
+        form.setAttribute("action", path);
+
+        for(var key in params) {
+            if(params.hasOwnProperty(key)) {
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
+                hiddenField.setAttribute("name", key);
+                hiddenField.setAttribute("value", params[key]);
+
+                form.appendChild(hiddenField);
+            }
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    };
+
+
 // Load the Visualization API and the piechart package.
 google.load('visualization', '1', {'packages':['controls'], callback: drawTable});
 
@@ -36,22 +61,27 @@ google.setOnLoadCallback(drawTable);
 
 function drawTable() {
     var data = new google.visualization.DataTable();
-    data.addRows({{ bestlaps_count }});
-    data.addColumn('string', 'Number');
+    var page_size = {{ page_size }}
+    var page_count = {{ page_count }}
+    var page_num = {{ page_num }}
+    var offset = (page_size * (page_num+1)) - page_size;
+    data.addRows({{ page_size}}*{{page_count}});
+    data.addColumn('string', 'Car #');
     data.addColumn('string', 'Racer');
-    data.addColumn('string', 'Class');
+    data.addColumn('string', 'Race Class');
     data.addColumn('string', 'Track');
     data.addColumn('string', 'Best Lap');
     data.addColumn('string', 'Date');
-
-     {% for bestlap in bestlaps %}
-        var t = makeTime({{ bestlap.time }});
-        data.setCell({{ loop.index }}, 0, '{{ bestlap.driver.car.number }}');
-        data.setCell({{ loop.index }}, 1, '<a href="/driver/{{ bestlap.driver.name }}">{{ bestlap.driver.name }}</a>');
-        data.setCell({{ loop.index }}, 2, '{{ bestlap.raceclass.name }}');
-        data.setCell({{ loop.index }}, 3, '{{ bestlap.track }}');
-        data.setCell({{ loop.index }}, 4, t);
-        data.setCell({{ loop.index }}, 5, '{{ bestlap.event.date.strftime('%a, %b %d, %Y') }}');
+    	
+    {% for lap in laps %}
+        var t = makeTime({{ lap.time }});
+        data.setCell(offset, 0, '{{ lap.driver.car.number }}');
+        data.setCell(offset, 1, '<a href="/driver/{{ lap.driver.name }}">{{ lap.driver.name }}</a>');
+        data.setCell(offset, 2, '{{ lap.raceclass.name }}');
+        data.setCell(offset, 3, '{{ lap.track }}');
+        data.setCell(offset, 4, t);
+        data.setCell(offset, 5, '{{ lap.event.date.strftime('%a, %b %d, %Y') }}');
+        offset++;
     {% endfor %}
 
 
@@ -96,8 +126,10 @@ function drawTable() {
         chartType: 'Table',
         containerId: 'table_div',
         options: {
-            page: 'enable',
-            pageSize: '25',
+            page: 'event',
+            pageSize: page_size,
+            pagingButtons: page_count,
+            startPage: page_num,
             showRowNumber: false,
             allowHtml: true
         },
@@ -105,9 +137,24 @@ function drawTable() {
             labelStacking: 'vertical'
         }
     });
-
+    
+    google.visualization.events.addListener(dashboard,'ready', onReady);
+    
     dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
     dashboard.draw(data);
+    
+    function onReady() {
+        google.visualization.events.addListener(table.getChart(),'page', changePage);
+    }
+    function changePage(e) {
+        console.log(page_size);
+        page_num = e['page'] + 1;
+        alert('The user is navigating to page ' + page_num);
+        post('/bestlap', {page_num: page_num, page_size: page_size-1, function: 'changePage'});
+        table.draw(data);
+    }
+
+   
 }
 </script>
 <p align="center"><img src="/images/0.gif" alt="Banner" align="middle"></p>

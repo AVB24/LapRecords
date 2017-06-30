@@ -54,6 +54,7 @@
         form.submit();
     };
 
+    
 
 // Load the Visualization API and the piechart package.
 //google.load('visualization', '1', {'packages':['table']});
@@ -165,9 +166,12 @@ function drawTable() {
     <hr>
     <div id="w">
         <center><form action="/search" method="POST" enctype="multipart/form-data" >
-            <div class='inline'>Racer Name: <input type="text" name="racer"></div>
-            <div class='inline'>Race Class: <input type="text" name="race_class"></div>
-            <div class='inline'>Track Name: <input type="text" name="track"></div>
+            <div class='inline'>Racer Name: <select id="selectRacer" name="racer">
+                <option></option></select></div>
+            <div class='inline'>Race Class: <select id="selectClass" name="race_class">
+                <option></option></select></div>
+            <div class='inline'>Track Name: <select id="selectTrack" name="track">
+                <option></option></select></div>
             <div class='inline'>Best Lap?: <input type="checkbox" name="isBest" value="True"></div>
             <input type="hidden" name="function" value="search">
             <input type="submit" name="submit" value="Submit">
@@ -186,4 +190,39 @@ function drawTable() {
         </div>
     </div>
 </body>
+<script>
+    
+    var select = document.getElementById("selectRacer");
+    console.log(select);
+    //var options = ["1", "2", "3", "4", "5"];
+    {% for racer in searchRacers %}
+        var opt = "{{racer.name}}";
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+    {% endfor %}
+
+    var select = document.getElementById("selectClass");
+    console.log(select);
+    //var options = ["1", "2", "3", "4", "5"];
+    {% for searchClass in searchClasses %}
+        var opt = '{{searchClass.name}}';
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+    {% endfor %}
+
+    var select = document.getElementById("selectTrack");
+    console.log(select);
+    //var options = ["1", "2", "3", "4", "5"];
+    {% for track in searchTracks %}
+        var opt = '{{track.name}}';
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+    {% endfor %}
+</script>
 </html>

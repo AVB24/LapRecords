@@ -77,6 +77,18 @@ class DataServices():
 	def get_page_size(self):
 		return 50
 	
+	def get_racers(self):
+		myRacerQuery = PagedQuery(Racer.all(), 99999)
+		return myRacerQuery.fetch_page()
+	
+	def get_race_classes(self):
+		myClassQuery = PagedQuery(RaceClass.all(), 99999)
+		return myClassQuery.fetch_page()
+	
+	def get_tracks(self):
+		myTrackQuery = PagedQuery(Track.all(), 99999)
+		return myTrackQuery.fetch_page()
+	
 	def set_data_mem(self, name, data):
 		try:
 			added = memcache.add(name, data, 3600)
@@ -296,7 +308,6 @@ class MainHandler(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 
 class LapHandler(webapp2.RequestHandler):
-
 	def get(self):
 		user = users.get_current_user()
 		page_size = data_services.get_page_size()
@@ -304,16 +315,13 @@ class LapHandler(webapp2.RequestHandler):
 		menu = ui_services.get_menu("lap")	
 		myPagedQuery = PagedQuery(BestLap.all(), page_size)
 		myResults = myPagedQuery.fetch_page()
-		
-		tracks = Track.all()
+
 		template_values = {
 			'user': user,
 			'laps': myResults,
-			'laps_count': BestLap.all().count() + 1,
 			'page_size': page_size + 1,
 			'page_count': myPagedQuery.page_count(),
 			'page_num': 0,
-			'tracks': tracks,
 			'greeting': greeting,
 			'menu': menu
 		}
@@ -330,12 +338,13 @@ class LapHandler(webapp2.RequestHandler):
 		page_num = int(self.request.get('page_num'))
 
 		myPagedQuery = PagedQuery(BestLap.all(), page_size)
+		page_count = myPagedQuery.page_count()
 		myResults = myPagedQuery.fetch_page(page_num)
 		template_values = {
 			'user': user,
 			'laps': myResults,
 			'page_size': page_size + 1,
-			'page_count': myPagedQuery.page_count(),
+			'page_count':page_count,
 			'page_num': page_num-1,
 			'greeting': greeting,
 			'menu': menu
@@ -348,40 +357,45 @@ class LapHandler(webapp2.RequestHandler):
 class BestLapHandler(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
+		page_size = data_services.get_page_size()
 		greeting = ui_services.get_greeting(user)
-		menu = ui_services.get_menu("best")
+		menu = ui_services.get_menu("best")	
+		myBestQuery = PagedQuery(BestLap.all().filter("isBest", True), page_size)
+		page_count = myBestQuery.page_count()
+		myResults = myBestQuery.fetch_page()
 
-		bestlaps_query = BestLap.all() #db.GqlQuery('SELECT * from BestLap ORDER BY time ASC').fetch(100,0)
-		bestlaps_query.filter("isBest =", True)
-		bestlaps_query.order('time')
-		bestlaps = bestlaps_query.fetch(5000, 0)
 		template_values = {
 			'user': user,
-			'bestlaps': bestlaps,
-			'bestlaps_count': len(bestlaps)+1,
+			'laps': myResults,
+			'page_size': page_size,
+			'page_count': page_count,
+			'page_num': 0,
 			'greeting': greeting,
 			'menu': menu
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
 		self.response.write(template.render(template_values))
-
+	
 	def post(self):
 		user = users.get_current_user()
 		greeting = ui_services.get_greeting(user)
-		menu = ui_services.get_menu("best")
+		menu = ui_services.get_menu("lap")
+		function = self.request.get('function')
+		page_size = int(self.request.get('page_size'))
+		page_num = int(self.request.get('page_num'))
 
-		track = self.request.get('track')
-
-		bestlaps_query = BestLap.all()
-		bestlaps_query.filter("isBest =", True)
-		if track != 'all':
-			bestlaps_query.filter('track =', track)
-		bestlaps = bestlaps_query.fetch(5000,0)
+		myBestQuery = PagedQuery(BestLap.all().filter("isBest", True).order("-index"), page_size)
+		page_count = myBestQuery.page_count()
+		myResults = myBestQuery.fetch_page(page_num)
 		template_values = {
 			'user': user,
-			'bestlaps': bestlaps,
-			'bestlaps_count': len(bestlaps)+1
+			'laps': myResults,
+			'page_size': page_size,
+			'page_count':page_count,
+			'page_num': page_num-1,
+			'greeting': greeting,
+			'menu': menu
 		}
 		
 		template = JINJA_ENVIRONMENT.get_template('templates/bestlap.html')
@@ -393,6 +407,9 @@ class searchLapHandler(webapp2.RequestHandler):
 		function = self.request.get('function')
 		greeting = ui_services.get_greeting(user)
 		menu = ui_services.get_menu("search")
+		searchRacers = data_services.get_racers()
+		searchClasses = data_services.get_race_classes()
+		searchTracks = data_services.get_tracks()
 
 		template_values = {
 			'user': user,
@@ -400,7 +417,10 @@ class searchLapHandler(webapp2.RequestHandler):
 			'greeting': greeting,
 			'page_size': 0,
 			'page_count': 0,
-			'page_num': 0
+			'page_num': 0,
+			'searchRacers': searchRacers,
+			'searchClasses': searchClasses,
+			'searchTracks': searchTracks
 		}
 
 		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
@@ -414,10 +434,14 @@ class searchLapHandler(webapp2.RequestHandler):
 		race_class = self.request.get('race_class')
 		track = self.request.get('track')
 		isBest = self.request.get('isBest')
+		searchRacers = data_services.get_racers()
+		searchClasses = data_services.get_race_classes()
+		searchTracks = data_services.get_tracks()
 		
 		if function == "search":
 			page_num = 1
 			page_size = data_services.get_page_size()
+			
 			myQuery = BestLap.all()
 			if racer:
 				driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
@@ -450,7 +474,10 @@ class searchLapHandler(webapp2.RequestHandler):
 			'page_count': page_count,
 			'page_num': page_num-1,
 			'greeting': greeting,
-			'menu': menu
+			'menu': menu,
+			'searchRacers': searchRacers,
+			'searchClasses': searchClasses,
+			'searchTracks': searchTracks
 		}
 
 		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
