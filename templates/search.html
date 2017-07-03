@@ -151,7 +151,7 @@ function drawTable() {
         page_num = e['page'] + 1;
         //alert('The user is navigating to page ' + page_num);
        
-        post('/search', {page_num: page_num, page_size: page_size, function: 'changePage', racer:'{{racer}}', race_class:'{{race_class}}', track:'{{track}}', isBest:'{{isBest}}' });
+        post('/search', {page_num: page_num, page_size: page_size, function: 'changePage', racer:"{{racer}}", race_class:"{{race_class}}", track:"{{track}}", isBest:"{{isBest}}" });
         table.draw(data);
     }
 }
