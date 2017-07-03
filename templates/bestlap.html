@@ -149,8 +149,8 @@ function drawTable() {
     function changePage(e) {
         console.log(page_size);
         page_num = e['page'] + 1;
-        alert('The user is navigating to page ' + page_num);
-        post('/bestlap', {page_num: page_num, page_size: page_size-1, function: 'changePage'});
+        //alert('The user is navigating to page ' + page_num);
+        post('/bestlap', {page_num: page_num, page_size: page_size, function: 'changePage'});
         table.draw(data);
     }
 

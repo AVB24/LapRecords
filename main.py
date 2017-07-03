@@ -89,9 +89,10 @@ class DataServices():
 		myTrackQuery = PagedQuery(Track.all(), 99999)
 		return myTrackQuery.fetch_page()
 	
-	def set_data_mem(self, name, data):
+	def set_data_mem(self, name, data, seconds):
 		try:
-			added = memcache.add(name, data, 3600)
+			memcache.delete(name, 15)
+			added = memcache.add(name, data, seconds)
 			if not added:
 				logging.error('Memcache set failed.')
 		except ValueError:
@@ -319,7 +320,7 @@ class LapHandler(webapp2.RequestHandler):
 		template_values = {
 			'user': user,
 			'laps': myResults,
-			'page_size': page_size + 1,
+			'page_size': page_size,
 			'page_count': myPagedQuery.page_count(),
 			'page_num': 0,
 			'greeting': greeting,
@@ -343,7 +344,7 @@ class LapHandler(webapp2.RequestHandler):
 		template_values = {
 			'user': user,
 			'laps': myResults,
-			'page_size': page_size + 1,
+			'page_size': page_size,
 			'page_count':page_count,
 			'page_num': page_num-1,
 			'greeting': greeting,
@@ -385,7 +386,7 @@ class BestLapHandler(webapp2.RequestHandler):
 		page_size = int(self.request.get('page_size'))
 		page_num = int(self.request.get('page_num'))
 
-		myBestQuery = PagedQuery(BestLap.all().filter("isBest", True).order("-index"), page_size)
+		myBestQuery = PagedQuery(BestLap.all().filter("isBest", True), page_size)
 		page_count = myBestQuery.page_count()
 		myResults = myBestQuery.fetch_page(page_num)
 		template_values = {
@@ -438,43 +439,57 @@ class searchLapHandler(webapp2.RequestHandler):
 		searchClasses = data_services.get_race_classes()
 		searchTracks = data_services.get_tracks()
 		
+		
+		
+		myQuery = BestLap.all()
+		if racer and racer != "None":
+			driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
+			myQuery.filter('driver', driver)
+		else:
+			racer = None
+
+		if race_class and race_class != "None":
+			race_class = RaceClass.all().filter('name =', race_class).fetch(1,0)[0]
+			myQuery.filter('raceclass', race_class)
+		else:
+			race_class = None
+
+		if track and track != "None":
+			myQuery.filter('track', track)
+		else:
+			track = None
+
+		if isBest == "True":
+			myQuery.filter('isBest', True)
+		else:
+			isBest = "False"
+		
 		if function == "search":
 			page_num = 1
 			page_size = data_services.get_page_size()
-			
-			myQuery = BestLap.all()
-			if racer:
-				driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
-				myQuery.filter('driver', driver)
-			if race_class:
-				race_class = RaceClass.all().filter('name =', race_class).fetch(1,0)[0]
-				myQuery.filter('raceclass', race_class)
-			if track:
-				myQuery.filter('track', track)
-			if isBest == "True":
-				myQuery.filter('isBest', True)
-			
-			data_services.set_data_mem('myQuery', myQuery)
 			myPagedQuery = PagedQuery(myQuery, page_size)
 			page_count = myPagedQuery.page_count()
 			myResults = myPagedQuery.fetch_page()
 		elif function == "changePage":
-			myQuery = data_services.get_data_mem('myQuery')
+			#logging.info(myQuery)
 			page_num = int(self.request.get('page_num'))
 			page_size = int(self.request.get('page_size'))
 			myPagedQuery = PagedQuery(myQuery, page_size)
 			page_count = myPagedQuery.page_count()
 			myResults = myPagedQuery.fetch_page(page_num)
-
-		logging.info(myResults)
+		#logging.info(myResults)
 		template_values = {
 			'user': user,
 			'laps': myResults,
-			'page_size': page_size + 1,
+			'page_size': page_size,
 			'page_count': page_count,
 			'page_num': page_num-1,
 			'greeting': greeting,
 			'menu': menu,
+			'racer': racer,
+			'race_class': race_class,
+			'track': track,
+			'isBest': isBest,
 			'searchRacers': searchRacers,
 			'searchClasses': searchClasses,
 			'searchTracks': searchTracks
