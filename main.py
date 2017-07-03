@@ -445,12 +445,14 @@ class searchLapHandler(webapp2.RequestHandler):
 		if racer and racer != "None":
 			driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
 			myQuery.filter('driver', driver)
+			racer = driver.name
 		else:
 			racer = None
 
 		if race_class and race_class != "None":
 			race_class = RaceClass.all().filter('name =', race_class).fetch(1,0)[0]
 			myQuery.filter('raceclass', race_class)
+			race_class = race_class.name
 		else:
 			race_class = None
 
