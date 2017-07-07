@@ -253,7 +253,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			car_color = row['Color']
 			city = row['City']
 			state = row['State']
-			sponsor = row['Sponsor']
+			sponsor = normalize_string(row['Sponsor'])
 			email = row['Email']
 
 			if time.count(':') == 0 and time:
