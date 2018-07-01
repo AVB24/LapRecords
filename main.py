@@ -272,7 +272,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				r.sponsor=Sponsor.get_or_insert(key_name=sponsor, name=sponsor)
 
 			r.put()
-			best = BestLap.get_or_insert(key_name=sd+t+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
+			best = BestLap.get_or_insert(key_name=sd+t+g+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
 
 			if cl.name in bestlaps:
 				if pt < bestlaps[cl.name].time and pt != 0.0:
