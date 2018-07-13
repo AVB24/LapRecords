@@ -34,7 +34,7 @@ class DataServices():
 	def get_all_laps(self):
 		all_laps = memcache.get('allLaps')
 		if all_laps is None:
-			all_laps = db.GqlQuery('SELECT * from BestLap ORDER BY time DESC')
+			all_laps = db.GqlQuery('SELECT * from BestLap')
 			try:
 				added = memcache.add('allLaps', all_laps, 3600)
 				if not added:
@@ -49,7 +49,7 @@ class DataServices():
 		return all_laps
 
 	def get_best_laps(self,numFirstRecord,numLastRecord):
-		retBestLaps = db.GqlQuery('SELECT * from BestLap WHERE isBest = True ORDER BY time DESC').fetch(numLastRecord,numFirstRecord)
+		retBestLaps = db.GqlQuery('SELECT * from BestLap WHERE isBest = True').fetch(numLastRecord,numFirstRecord)
 		return retBestLaps
 	
 	def get_laps(self, numFirstRecord,numLastRecord):
