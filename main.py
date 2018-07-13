@@ -34,7 +34,7 @@ class DataServices():
 	def get_all_laps(self):
 		all_laps = memcache.get('allLaps')
 		if all_laps is None:
-			all_laps = db.GqlQuery('SELECT * from BestLap ORDER BY time ASC')
+			all_laps = db.GqlQuery('SELECT * from BestLap ORDER BY time DESC')
 			try:
 				added = memcache.add('allLaps', all_laps, 3600)
 				if not added:
@@ -49,7 +49,7 @@ class DataServices():
 		return all_laps
 
 	def get_best_laps(self,numFirstRecord,numLastRecord):
-		retBestLaps = db.GqlQuery('SELECT * from BestLap WHERE isBest = True ORDER BY time ASC').fetch(numLastRecord,numFirstRecord)
+		retBestLaps = db.GqlQuery('SELECT * from BestLap WHERE isBest = True ORDER BY time DESC').fetch(numLastRecord,numFirstRecord)
 		return retBestLaps
 	
 	def get_laps(self, numFirstRecord,numLastRecord):
@@ -121,30 +121,25 @@ class UIServices():
 	def get_menu(self, page):
 		if not users.is_current_user_admin():
 			if page == "lap":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>" %
-					("/","/bestlap", "/search"))
-			elif page == "best":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>" %	("/", "/laps", "/search"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
+					("/search", "http://nasane.com/"))
 			elif page == "main":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>" %
-					("/laps","/bestlap", "/search"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
+					("/laps", "/search", "http://nasane.com/"))
 			elif page == "search":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>" %
-					("/", "/laps","/bestlap",))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
+					("/laps", "http://nasane.com/"))
 				
 		else:
 			if page == "lap":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/", "/bestlap","/search","/importer"))
-			elif page == "best":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Home</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/", "/laps","/search","/importer"))
-			elif page == "main":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/laps","/bestlap", "/search","/importer"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
+					("/search","/importer","http://nasane.com/"))
 			elif page == "search":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Main</a>&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Best Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>" %
-					("/","/laps","/bestlap","/importer"))
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
+					("/laps","/importer","http://nasane.com/"))
+			elif page == "importer":
+				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
+					("/laps","/search","http://nasane.com/"))
 		return menu
 
 data_services = DataServices()
@@ -296,16 +291,26 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 class MainHandler(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
+		function = self.request.get('function')
 		greeting = ui_services.get_greeting(user)
-		menu = ui_services.get_menu("main")		
-		
+		menu = ui_services.get_menu("search")
+		searchRacers = data_services.get_racers()
+		searchClasses = data_services.get_race_classes()
+		searchTracks = data_services.get_tracks()
+
 		template_values = {
 			'user': user,
 			'menu': menu,
-			'greeting': greeting
+			'greeting': greeting,
+			'page_size': 0,
+			'page_count': 0,
+			'page_num': 0,
+			'searchRacers': searchRacers,
+			'searchClasses': searchClasses,
+			'searchTracks': searchTracks
 		}
-		
-		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
+
+		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
 		self.response.write(template.render(template_values))
 
 class LapHandler(webapp2.RequestHandler):
@@ -362,6 +367,7 @@ class BestLapHandler(webapp2.RequestHandler):
 		greeting = ui_services.get_greeting(user)
 		menu = ui_services.get_menu("best")	
 		myBestQuery = PagedQuery(BestLap.all().filter("isBest", True), page_size)
+		#myBestQuery.order('-event')
 		page_count = myBestQuery.page_count()
 		myResults = myBestQuery.fetch_page()
 
@@ -503,12 +509,9 @@ class searchLapHandler(webapp2.RequestHandler):
 class Importer(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
-		if user:
-			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
-							(user.nickname(), users.create_logout_url("/")))
-		else:
-			greeting = ("<a href=\"%s\">Sign in or register</a>." %
-							users.create_login_url("/"))
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("importer")		
+
 		if not users.is_current_user_admin():
 			self.redirect('/')
 		drivers = Racer.all()
@@ -517,6 +520,7 @@ class Importer(webapp2.RequestHandler):
 			'drivers': drivers,
 			'user': user,
 			'upload_url': upload_url,
+			'menu': menu,
 			'greeting': greeting
 		}
 		template = JINJA_ENVIRONMENT.get_template('templates/importer.html')

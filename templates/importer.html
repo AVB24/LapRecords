@@ -3,11 +3,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-Hello, {{ user.nickname }}:
-{{ greeting }}
-
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/cupertino/jquery-ui.css">
+<link rel="icon" type="image/png" href="images/Favicon.png">
+<link rel="stylesheet" type="text/css" media="all" href="/css/design.css">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 <script>
@@ -19,7 +18,12 @@ Hello, {{ user.nickname }}:
     });
   } );
   </script>
-<br><hr><br>
+    <p align="center"  style="background-color:#b9b8b8">
+        <img src="/images/0.gif" alt="Banner" align="middle" />
+        <hr>
+        <div class='menu'>{{ menu }}</div><div class='greeting'>{{ greeting }}</div>
+        <br><hr>
+    </p>
 
 </head>
 <body>

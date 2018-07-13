@@ -441,6 +441,13 @@ a {
   display: inline-block;
 }
 /* 2 - Menu */
+.menu {
+  float: left;
+  margin-right: 5px;
+}
+.greeting {
+  float: right
+}
 /* 3 - Responsive Tables 
 https://css-tricks.com/responsive-data-tables/ */
 

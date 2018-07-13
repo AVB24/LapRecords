@@ -7,6 +7,7 @@
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <link rel="stylesheet" type="text/css" media="all" href="/css/design.css">
+<link rel="icon" type="image/png" href="images/Favicon.png">
 <script type="text/javascript">
     function makeTime(time) {
         // Minutes and seconds
@@ -155,13 +156,14 @@ function drawTable() {
 
 
 </script>
-<p align="center"><img src="/images/0.gif" alt="Banner" align="middle"></p>
-<hr>
+    <p align="center"  style="background-color:#b9b8b8">
+            <img src="/images/0.gif" alt="Banner" align="middle" />
+            <hr>
+            <div class='menu'>{{ menu }}</div><div class='greeting'>{{ greeting }}</div>
+            <br><hr>
+        </p>
 </head>
 <body>
-    {{ greeting }}
-    {{ menu }}
-    <hr>
     <div id="w">
         <div id="content">
             <div id="dashboard" align="center">

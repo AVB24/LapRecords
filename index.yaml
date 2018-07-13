@@ -13,6 +13,17 @@ indexes:
 - kind: BestLap
   properties:
   - name: isBest
+  - name: event
+
+- kind: BestLap
+  properties:
+  - name: isBest
+  - name: event
+    direction: desc
+
+- kind: BestLap
+  properties:
+  - name: isBest
   - name: time
 
 - kind: BestLap
