@@ -141,7 +141,7 @@ function drawTable() {
     google.visualization.events.addListener(dashboard,'ready', onReady);
     
     dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
-    //data.sort({column:5, desc: true});
+    data.sort({column:5, desc: true});
     dashboard.draw(data);
     
     function onReady() {
