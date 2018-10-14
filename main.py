@@ -491,7 +491,7 @@ class searchLapHandler(webapp2.RequestHandler):
 			'laps': myResults,
 			'page_size': page_size,
 			'page_count': page_count,
-			'page_num': page_num-1,
+			'page_num': page_num,
 			'greeting': greeting,
 			'menu': menu,
 			'racer': racer,

@@ -3,11 +3,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <link rel="stylesheet" type="text/css" media="all" href="/css/design.css">
 <link rel="icon" type="image/png" href="images/Favicon.png">
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript">
     function makeTime(time) {
         // Minutes and seconds
@@ -62,13 +60,15 @@
 
 // Set a callback to run when the Google Visualization API is loaded.
 //google.setOnLoadCallback(drawTable);
+
 google.load('visualization', '1', {'packages':['controls'], callback: drawTable});
 
 function drawTable() {
+
     var data = new google.visualization.DataTable();
     var page_size = {{ page_size }};
     var page_count = {{ page_count }};
-    var page_num = {{ page_num }};
+    var page_num = {{ page_num }}-1;
     var offset = (page_size * (page_num+1)) - page_size;
 
     data.addRows({{ page_size}}*{{page_count}});
@@ -78,7 +78,21 @@ function drawTable() {
     data.addColumn('string', 'Track');
     data.addColumn('string', 'Best Lap');
     data.addColumn('string', 'Date');
-    	
+    
+    var temp = {};
+    var avb = 0;
+    {% for lap in laps %}
+        var t = makeTime({{ lap.time }});
+        temp[avb] = {};
+        temp[avb]['Car #'] = '{{ lap.driver.car.number }}';
+        temp[avb]['Racer'] = '<a href="/driver/{{ lap.driver.name }}">{{ lap.driver.name }}</a>';
+        temp[avb]['Race Class'] = '{{ lap.raceclass.name }}';
+        temp[avb]['Track'] =  '{{ lap.track }}';
+        temp[avb]['Best Lap'] = t;
+        temp[avb]['Date'] = '{{ lap.event.date.strftime('%a, %b %d, %Y') }}';
+        avb++;
+    {% endfor %}
+    console.log(temp);
     {% for lap in laps %}
         var t = makeTime({{ lap.time }});
         data.setCell(offset, 0, '{{ lap.driver.car.number }}');
@@ -142,8 +156,8 @@ function drawTable() {
     google.visualization.events.addListener(dashboard,'ready', onReady);
     
     dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
-    data.sort({column:5, desc: true});
-    dashboard.draw(data);
+    //data.sort({column:5, desc: true});
+    //dashboard.draw(data);
 
     function onReady() {
         google.visualization.events.addListener(table.getChart(),'page', changePage);
@@ -156,6 +170,7 @@ function drawTable() {
         post('/search', {page_num: page_num, page_size: page_size, function: 'changePage', racer:"{{racer}}", race_class:"{{race_class}}", track:"{{track}}", isBest:"{{isBest}}" });
         table.draw(data);
     }
+    dashboard.draw(data);
 }
 
 
@@ -190,7 +205,7 @@ function drawTable() {
                 <br>
                 <div id="table_div"></div>
             </div>
-            Page {{page_num + 1}} of {{page_count}}
+            Page {{page_num}} of {{page_count}}
         </div>
     </div>
 </body>
@@ -229,4 +244,5 @@ function drawTable() {
         select.appendChild(el);
     {% endfor %}
 </script>
+
 </html>
