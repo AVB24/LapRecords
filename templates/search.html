@@ -7,6 +7,27 @@
 <link rel="icon" type="image/png" href="images/Favicon.png">
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript">
+    function sortByProperty(objArray, prop, direction){
+        if (arguments.length<2) throw new Error("ARRAY, AND OBJECT PROPERTY MINIMUM ARGUMENTS, OPTIONAL DIRECTION");
+        if (!Array.isArray(objArray)) throw new Error("FIRST ARGUMENT NOT AN ARRAY");
+        const clone = objArray.slice(0);
+        const direct = arguments.length>2 ? arguments[2] : 1; //Default to ascending
+        const propPath = (prop.constructor===Array) ? prop : prop.split(".");
+        clone.sort(function(a,b){
+            for (let p in propPath){
+                    if (a[propPath[p]] && b[propPath[p]]){
+                        a = a[propPath[p]];
+                        b = b[propPath[p]];
+                    }
+            }
+            // convert numeric strings to integers
+            a = a.match(/^\d+$/) ? +a : a;
+            b = b.match(/^\d+$/) ? +b : b;
+            return ( (a < b) ? -1*direct : ((a > b) ? 1*direct : 0) );
+        });
+        return clone;
+    }
+
     function makeTime(time) {
         // Minutes and seconds
         var mins = ~~(time / 60);
@@ -72,37 +93,49 @@ function drawTable() {
     var offset = (page_size * (page_num+1)) - page_size;
 
     data.addRows({{ page_size}}*{{page_count}});
-    data.addColumn('string', 'Car #');
+   // data.addColumn('string', 'Car #');
     data.addColumn('string', 'Racer');
     data.addColumn('string', 'Race Class');
     data.addColumn('string', 'Track');
     data.addColumn('string', 'Best Lap');
     data.addColumn('string', 'Date');
     
-    var temp = {};
+    var temp = {'laps': []};
     var avb = 0;
     {% for lap in laps %}
         var t = makeTime({{ lap.time }});
-        temp[avb] = {};
-        temp[avb]['Car #'] = '{{ lap.driver.car.number }}';
-        temp[avb]['Racer'] = '<a href="/driver/{{ lap.driver.name }}">{{ lap.driver.name }}</a>';
-        temp[avb]['Race Class'] = '{{ lap.raceclass.name }}';
-        temp[avb]['Track'] =  '{{ lap.track }}';
-        temp[avb]['Best Lap'] = t;
-        temp[avb]['Date'] = '{{ lap.event.date.strftime('%a, %b %d, %Y') }}';
+        temp['laps'][avb] = {};
+        temp['laps'][avb]['Car #'] = '{{ lap.driver.car.number }}';
+        temp['laps'][avb]['Racer'] = '<a href="/driver/{{ lap.driver.name }}">{{ lap.driver.name }}</a>';
+        temp['laps'][avb]['Race Class'] = '{{ lap.raceclass.name }}';
+        temp['laps'][avb]['Track'] =  '{{ lap.track }}';
+        temp['laps'][avb]['Best Lap'] = t;
+        temp['laps'][avb]['Date'] = '{{ lap.event.date.strftime('%a, %b %d, %Y') }}';
         avb++;
     {% endfor %}
-    console.log(temp);
-    {% for lap in laps %}
+    //console.log(temp);
+    const resultsByObjectIdDescending = sortByProperty(temp['laps'], 'Date', -1);
+    //console.log(resultsByObjectIdDescending);
+    for(i=0; i<resultsByObjectIdDescending.length; i++){
+        //data.setCell(offset, 0, resultsByObjectIdDescending[i]['Car #']);
+        data.setCell(offset, 0, resultsByObjectIdDescending[i]['Racer']);
+        data.setCell(offset, 1, resultsByObjectIdDescending[i]['Race Class']);
+        data.setCell(offset, 2, resultsByObjectIdDescending[i]['Track']);
+        data.setCell(offset, 3, resultsByObjectIdDescending[i]['Best Lap']);
+        data.setCell(offset, 4, resultsByObjectIdDescending[i]['Date']);
+        offset++;
+    }
+    /*
+    {% for lap in resultsByObjectIdDescending %}
         var t = makeTime({{ lap.time }});
-        data.setCell(offset, 0, '{{ lap.driver.car.number }}');
+        data.setCell(offset, 0, lap[]);
         data.setCell(offset, 1, '<a href="/driver/{{ lap.driver.name }}">{{ lap.driver.name }}</a>');
         data.setCell(offset, 2, '{{ lap.raceclass.name }}');
         data.setCell(offset, 3, '{{ lap.track }}');
         data.setCell(offset, 4, t);
         data.setCell(offset, 5, '{{ lap.event.date.strftime('%a, %b %d, %Y') }}');
         offset++;
-    {% endfor %}
+    {% endfor %}*/
 
     var dashboard = new google.visualization.Dashboard(document.querySelector('#dashboard'));
 
