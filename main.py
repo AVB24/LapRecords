@@ -34,7 +34,7 @@ class DataServices():
 	def get_all_laps(self):
 		all_laps = memcache.get('allLaps')
 		if all_laps is None:
-			all_laps = db.GqlQuery('SELECT * from BestLap')
+			all_laps = BestLap.all()
 			try:
 				added = memcache.add('allLaps', all_laps, 3600)
 				if not added:
@@ -170,6 +170,14 @@ def normalize_string(str):
 	else:
 		return "None"
 
+def validLap(racer_class, point_in_class):
+	valid = True
+	if racer_class == 'None' or racer_class == 'No Class':
+		valid = False
+	elif point_in_class == 'DQ' or point_in_class == 'DNS':
+		valid = False
+	return valid
+
 class PicuploadHandler(webapp2.RequestHandler):
 	def post(self):
 		driver_key = db.Key(self.request.get('driver'))
@@ -254,25 +262,26 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			if time.count(':') == 0 and time:
 				time = '0:' + time
 			
-			pt = process_time(time)
-			t = track #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
-			g = self.request.get('group')
-			sd = self.request.get('date')
-			dt = datetime.strptime(sd, '%Y-%m-%d')
-			tr = Track.get_or_insert(key_name=t, name=t)
-			e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
-			c = Car.get_or_insert(key_name=car_make+car_model+car_year, make=car_make, model=car_model,year=car_year,color=car_color,number=carnum)
-			cl = RaceClass.get_or_insert(key_name=racer_class, name=racer_class)
-			if email:
-				email
-			else:
-				email = racer_name.split()[0].lower() + racer_name.split()[1].lower()+'@gmail.com'
-			r = Racer.get_or_insert(key_name=racer_name.split()[0][0:1].lower() + racer_name.split()[1].lower(), email=email,name=racer_name, driver=users.User(email), points=int(points), car=c, raceclass=cl)
-			if sponsor:
-				r.sponsor=Sponsor.get_or_insert(key_name=sponsor, name=sponsor)
+			if validLap(racer_class, point_in_class):
+				pt = process_time(time)
+				t = track #Track.get_or_insert(key_name=self.request.get('track'), name=self.request.get('track'), lap_distance=1.02)
+				g = self.request.get('group')
+				sd = self.request.get('date')
+				dt = datetime.strptime(sd, '%Y-%m-%d')
+				tr = Track.get_or_insert(key_name=t, name=t)
+				e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
+				c = Car.get_or_insert(key_name=car_make+car_model+car_year, make=car_make, model=car_model,year=car_year,color=car_color,number=carnum)
+				cl = RaceClass.get_or_insert(key_name=racer_class, name=racer_class)
+				if email:
+					email
+				else:
+					email = racer_name.split()[0].lower() + racer_name.split()[1].lower()+'@gmail.com'
+				r = Racer.get_or_insert(key_name=racer_name.split()[0][0:1].lower() + racer_name.split()[1].lower(), email=email,name=racer_name, driver=users.User(email), points=int(points), car=c, raceclass=cl)
+				if sponsor:
+					r.sponsor=Sponsor.get_or_insert(key_name=sponsor, name=sponsor)
 
-			r.put()
-			best = BestLap.get_or_insert(key_name=sd+t+g+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event= e, isBest=False)
+				r.put()
+				best = BestLap.get_or_insert(key_name=sd+t+g+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event=e, isBest=False, date=dt)
 
 			if cl.name in bestlaps:
 				if pt < bestlaps[cl.name].time and pt != 0.0:
@@ -319,7 +328,10 @@ class LapHandler(webapp2.RequestHandler):
 		page_size = data_services.get_page_size()
 		greeting = ui_services.get_greeting(user)
 		menu = ui_services.get_menu("lap")	
-		myPagedQuery = PagedQuery(BestLap.all(), page_size)
+
+		myQuery = data_services.get_all_laps()
+		myQuery.order('-date')
+		myPagedQuery = PagedQuery(myQuery, page_size)
 		myResults = myPagedQuery.fetch_page()
 
 		template_values = {
@@ -343,9 +355,12 @@ class LapHandler(webapp2.RequestHandler):
 		page_size = int(self.request.get('page_size'))
 		page_num = int(self.request.get('page_num'))
 
-		myPagedQuery = PagedQuery(BestLap.all(), page_size)
+		myQuery = data_services.get_all_laps()
+		myQuery.order('-date')
+		myPagedQuery = PagedQuery(myQuery, page_size)
 		page_count = myPagedQuery.page_count()
 		myResults = myPagedQuery.fetch_page(page_num)
+		
 		template_values = {
 			'user': user,
 			'laps': myResults,
@@ -367,7 +382,7 @@ class BestLapHandler(webapp2.RequestHandler):
 		greeting = ui_services.get_greeting(user)
 		menu = ui_services.get_menu("best")	
 		myBestQuery = PagedQuery(BestLap.all().filter("isBest", True), page_size)
-		#myBestQuery.order('-event')
+		myBestQuery.order('-date')
 		page_count = myBestQuery.page_count()
 		myResults = myBestQuery.fetch_page()
 
@@ -432,6 +447,7 @@ class searchLapHandler(webapp2.RequestHandler):
 
 		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
 		self.response.write(template.render(template_values))
+
 	def post(self):
 		user = users.get_current_user()
 		function = self.request.get('function')
@@ -444,10 +460,9 @@ class searchLapHandler(webapp2.RequestHandler):
 		searchRacers = data_services.get_racers()
 		searchClasses = data_services.get_race_classes()
 		searchTracks = data_services.get_tracks()
-		
-		
-		
-		myQuery = BestLap.all()
+
+		myQuery = data_services.get_all_laps()
+		myQuery.order('-date')
 		if racer and racer != "None":
 			driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
 			myQuery.filter('driver', driver)
@@ -479,13 +494,12 @@ class searchLapHandler(webapp2.RequestHandler):
 			page_count = myPagedQuery.page_count()
 			myResults = myPagedQuery.fetch_page()
 		elif function == "changePage":
-			#logging.info(myQuery)
 			page_num = int(self.request.get('page_num'))
 			page_size = int(self.request.get('page_size'))
 			myPagedQuery = PagedQuery(myQuery, page_size)
 			page_count = myPagedQuery.page_count()
 			myResults = myPagedQuery.fetch_page(page_num)
-		#logging.info(myResults)
+
 		template_values = {
 			'user': user,
 			'laps': myResults,

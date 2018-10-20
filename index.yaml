@@ -31,3 +31,9 @@ indexes:
   - name: isBest
   - name: time
     direction: desc
+
+- kind: BestLap
+  properties:
+  - name: raceclass
+  - name: date
+    direction: desc
