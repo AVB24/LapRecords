@@ -111,35 +111,25 @@ class DataServices():
 class UIServices():
 	def get_greeting(self, user):
 		if user:
-			greeting = ("Welcome, %s! (<a href=\"%s\">sign out</a>)" %
-							(user.nickname(), users.create_logout_url("/")))
+			greeting = ("<li><a href=\"%s\">sign out</a></li>" %
+							users.create_logout_url("/"))
 		else:
-			greeting = ("<a href=\"%s\">Sign in or register</a>." %
+			greeting = ("<li><a href=\"%s\">Sign in or register</a></li>" %
 							users.create_login_url("/"))
 		return greeting
 	
 	def get_menu(self, page):
 		if not users.is_current_user_admin():
-			if page == "lap":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
-					("/search", "http://nasane.com/"))
-			elif page == "main":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
-					("/laps", "/search", "http://nasane.com/"))
-			elif page == "search":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
-					("/laps", "http://nasane.com/"))
-				
+			if page == "main":
+				menu = ("<li><a href=\"%s\">Nasa NE</a></li>" %
+					("http://nasane.com/"))
 		else:
-			if page == "lap":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
-					("/search","/importer","http://nasane.com/"))
-			elif page == "search":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Importer</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
-					("/laps","/importer","http://nasane.com/"))
+			if page == "main":
+				menu = ("<li><a href=\"%s\">Importer</a></li><li><a href=\"%s\">Nasa NE</a></li>" %
+					("/importer","http://nasane.com/"))
 			elif page == "importer":
-				menu = ("&nbsp;&nbsp;<a href=\"%s\">All Laps</a>&nbsp;&nbsp;<a href=\"%s\">Search Laps</a>&nbsp;&nbsp;<a href=\"%s\">Nasa NE</a>" %
-					("/laps","/search","http://nasane.com/"))
+				menu = ("<li><a href=\"%s\">Nasa NE</a></li>" %
+					("http://nasane.com/"))
 		return menu
 
 data_services = DataServices()
@@ -173,8 +163,10 @@ def normalize_string(str):
 def validLap(racer_class, point_in_class):
 	valid = True
 	if racer_class == 'None' or racer_class == 'No Class':
+		print("Lap had no class")
 		valid = False
 	elif point_in_class == 'DQ' or point_in_class == 'DNS':
+		print("Lap is DQ or DNS")
 		valid = False
 	return valid
 
@@ -213,7 +205,13 @@ class ImageHandler (webapp.RequestHandler):
 		self.response.headers['Content-Type'] = "image/png"
 		self.response.out.write(rp)
 	else:
-		self.error(404)
+		img =images.Image('avatar.png')
+		img.resize(width=200, crop_to_fit=False, allow_stretch=False)
+		img.im_feeling_lucky()
+		rp = img.execute_transforms(output_encoding=images.JPEG)
+		self.response.headers['Content-Type'] = "image/png"
+		self.response.out.write('images/avatar.png')
+		#self.error(404)
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
@@ -229,6 +227,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		record = Record(csv=str(blob_info)).put()
 		blob_reader = blobstore.BlobReader(blob_key)
 		reader = csv.DictReader(blob_reader)
+		lapsToUpload = []
 
 		for row in reader:
 			#row = row.replace('"','').replace(', ', ' ').strip()
@@ -270,7 +269,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				dt = datetime.strptime(sd, '%Y-%m-%d')
 				tr = Track.get_or_insert(key_name=t, name=t)
 				e = Event.get_or_insert(key_name=g+t+sd, name=g+t, track=tr, date=dt)
-				c = Car.get_or_insert(key_name=car_make+car_model+car_year, make=car_make, model=car_model,year=car_year,color=car_color,number=carnum)
+				c = Car.get_or_insert(key_name=carnum+car_make+car_model+car_color+car_year, make=car_make, model=car_model,year=car_year,color=car_color,number=carnum)
 				cl = RaceClass.get_or_insert(key_name=racer_class, name=racer_class)
 				if email:
 					email
@@ -293,7 +292,8 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			elif pt != 0.0:
 				best.isBest = True
 				bestlaps[cl.name] = best
-			best.put()
+			lapsToUpload.append(best)
+		db.put(lapsToUpload)
 		self.redirect('/')
 
 # Page Handlers
@@ -302,7 +302,7 @@ class MainHandler(webapp2.RequestHandler):
 		user = users.get_current_user()
 		function = self.request.get('function')
 		greeting = ui_services.get_greeting(user)
-		menu = ui_services.get_menu("search")
+		menu = ui_services.get_menu("main")
 		searchRacers = data_services.get_racers()
 		searchClasses = data_services.get_race_classes()
 		searchTracks = data_services.get_tracks()
@@ -319,7 +319,79 @@ class MainHandler(webapp2.RequestHandler):
 			'searchTracks': searchTracks
 		}
 
-		template = JINJA_ENVIRONMENT.get_template('templates/search.html')
+		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
+		self.response.write(template.render(template_values))
+
+	def post(self):
+		user = users.get_current_user()
+		function = self.request.get('function')
+		greeting = ui_services.get_greeting(user)
+		menu = ui_services.get_menu("main")
+		racer = self.request.get('racer')
+		race_class = self.request.get('race_class')
+		track = self.request.get('track')
+		isBest = self.request.get('isBest')
+		searchRacers = data_services.get_racers()
+		searchClasses = data_services.get_race_classes()
+		searchTracks = data_services.get_tracks()
+
+		myQuery = data_services.get_all_laps()
+		myQuery.order('-date')
+		if racer and racer != "None":
+			driver = Racer.all().filter('name =', racer).fetch(1,0)[0]
+			myQuery.filter('driver', driver)
+			racer = driver.name
+		else:
+			racer = None
+
+		if race_class and race_class != "None":
+			race_class = RaceClass.all().filter('name =', race_class).fetch(1,0)[0]
+			myQuery.filter('raceclass', race_class)
+			race_class = race_class.name
+		else:
+			race_class = None
+
+		if track and track != "None":
+			myQuery.filter('track', track)
+		else:
+			track = None
+
+		if isBest == "True":
+			myQuery.filter('isBest', True)
+		else:
+			isBest = "False"
+		
+		if function == "search":
+			page_num = 1
+			page_size = data_services.get_page_size()
+			myPagedQuery = PagedQuery(myQuery, page_size)
+			page_count = myPagedQuery.page_count()
+			myResults = myPagedQuery.fetch_page()
+		elif function == "changePage":
+			page_num = int(self.request.get('page_num'))
+			page_size = int(self.request.get('page_size'))
+			myPagedQuery = PagedQuery(myQuery, page_size)
+			page_count = myPagedQuery.page_count()
+			myResults = myPagedQuery.fetch_page(page_num)
+
+		template_values = {
+			'user': user,
+			'laps': myResults,
+			'page_size': page_size,
+			'page_count': page_count,
+			'page_num': page_num,
+			'greeting': greeting,
+			'menu': menu,
+			'racer': racer,
+			'race_class': race_class,
+			'track': track,
+			'isBest': isBest,
+			'searchRacers': searchRacers,
+			'searchClasses': searchClasses,
+			'searchTracks': searchTracks
+		}
+
+		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
 		self.response.write(template.render(template_values))
 
 class LapHandler(webapp2.RequestHandler):

@@ -3,12 +3,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<b> {{ racer.name }} </b>
-
+<meta charset="utf-8">
+<title>NasaNE Lap Records</title>
+<!-- meta -->
+<meta name="description" content="NasaNE Lap Database">
+<meta name="author" content="Aaron Van Blarcom">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- styles -->
+<!--<link rel="stylesheet" type="text/css" media="all" href="/css/design.css">-->
+<link rel="icon" type="image/png" href="../favicon.ico">
+<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.1/yeti/bootstrap.min.css" rel="stylesheet" media="screen">
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css">
-<link rel="icon" type="image/png" href="images/Favicon.png">
+<!--<link rel="stylesheet" type="text/css" media="all" href="/css/main.css">-->
 <script type="text/javascript" src="/js/jquery-1.10.2.min.js"></script>
 <script type="text/javascript">
 function makeTime(time) {
@@ -63,17 +70,17 @@ function drawTable() {
     table.draw(data, {showRowNumber: false, sort: 'enable', width: '50%', allowHtml: true});
 }
 </script>
-<br><hr><br>
 
 </head>
 <body>
   <div id="topbar">
-  <a href="/bestlap">Back to Lap Records</a>
+  <a href="/">Back to Lap Records</a>
   </div>
   
   <div id="w">
     <div id="content" class="clearfix">
-      <div id="userphoto"><img src="/imageit?key={{racer.key()}}" alt="default avatar"></img><br>
+      <!--<div id="userphoto"><img src="/imageit?key={{racer.key()}}" alt="default avatar"></img><br>-->
+        <div id="userphoto"><img src="../images/avatar.png" alt="default avatar"></img><br>
        Sponsor: {{racer.sponsor}}
       </div>
       <h1>{{racer.name}}</h1>

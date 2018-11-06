@@ -13,6 +13,12 @@ indexes:
 - kind: BestLap
   properties:
   - name: isBest
+  - name: date
+    direction: desc
+
+- kind: BestLap
+  properties:
+  - name: isBest
   - name: event
 
 - kind: BestLap
@@ -35,5 +41,11 @@ indexes:
 - kind: BestLap
   properties:
   - name: raceclass
+  - name: date
+    direction: desc
+
+- kind: BestLap
+  properties:
+  - name: track
   - name: date
     direction: desc

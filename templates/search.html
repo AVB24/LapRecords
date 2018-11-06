@@ -3,8 +3,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" type="text/css" media="all" href="/css/design.css">
+<meta charset="utf-8">
+<title>NasaNE Lap Records{% block title %}{% endblock %}</title>
+<!-- meta -->
+<meta name="description" content="NasaNE Lap Database">
+<meta name="author" content="Aaron Van Blarcom">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- styles -->
+<!--<link rel="stylesheet" type="text/css" media="all" href="/css/design.css">-->
 <link rel="icon" type="image/png" href="images/Favicon.png">
+<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.1/yeti/bootstrap.min.css" rel="stylesheet" media="screen">
+<link rel="stylesheet" type="text/css" media="all" href="/css/main.css">
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript">
     function sortByProperty(objArray, prop, direction){
@@ -82,8 +91,8 @@
 // Set a callback to run when the Google Visualization API is loaded.
 //google.setOnLoadCallback(drawTable);
 
-google.load('visualization', '1', {'packages':['controls'], callback: drawTable});
-
+google.load('visualization', '1', {'packages':['table']});
+google.setOnLoadCallback(drawTable);
 function drawTable() {
 
     var data = new google.visualization.DataTable();
@@ -93,7 +102,7 @@ function drawTable() {
     var offset = (page_size * (page_num+1)) - page_size;
 
     data.addRows({{ page_size}}*{{page_count}});
-   // data.addColumn('string', 'Car #');
+    data.addColumn('string', 'Car #');
     data.addColumn('string', 'Racer');
     data.addColumn('string', 'Race Class');
     data.addColumn('string', 'Track');
@@ -117,12 +126,12 @@ function drawTable() {
     const resultsByObjectIdDescending = sortByProperty(temp['laps'], 'Date', -1);
     //console.log(resultsByObjectIdDescending);
     for(i=0; i<resultsByObjectIdDescending.length; i++){
-        //data.setCell(offset, 0, resultsByObjectIdDescending[i]['Car #']);
-        data.setCell(offset, 0, resultsByObjectIdDescending[i]['Racer']);
-        data.setCell(offset, 1, resultsByObjectIdDescending[i]['Race Class']);
-        data.setCell(offset, 2, resultsByObjectIdDescending[i]['Track']);
-        data.setCell(offset, 3, resultsByObjectIdDescending[i]['Best Lap']);
-        data.setCell(offset, 4, resultsByObjectIdDescending[i]['Date']);
+        data.setCell(offset, 0, resultsByObjectIdDescending[i]['Car #']);
+        data.setCell(offset, 1, resultsByObjectIdDescending[i]['Racer']);
+        data.setCell(offset, 2, resultsByObjectIdDescending[i]['Race Class']);
+        data.setCell(offset, 3, resultsByObjectIdDescending[i]['Track']);
+        data.setCell(offset, 4, resultsByObjectIdDescending[i]['Best Lap']);
+        data.setCell(offset, 5, resultsByObjectIdDescending[i]['Date']);
         offset++;
     }
     /*
@@ -136,7 +145,7 @@ function drawTable() {
         data.setCell(offset, 5, '{{ lap.event.date.strftime('%a, %b %d, %Y') }}');
         offset++;
     {% endfor %}*/
-
+/*
     var dashboard = new google.visualization.Dashboard(document.querySelector('#dashboard'));
 
     var racerFilter = new google.visualization.ControlWrapper({
@@ -191,32 +200,66 @@ function drawTable() {
     dashboard.bind([racerFilter, classFilter, trackFilter], [table]);
     //data.sort({column:5, desc: true});
     //dashboard.draw(data);
+*/
+    var table = new google.visualization.Table(document.getElementById('table_div'));
+    google.visualization.events.addListener(table, 'ready', onReady);
+    table.draw(data,{
+            page: 'event',
+            pageSize: page_size,
+            pagingButtons: page_count,
+            startPage: page_num,
+            showRowNumber: false,
+            allowHtml: true
+        });
 
+
+    
     function onReady() {
-        google.visualization.events.addListener(table.getChart(),'page', changePage);
+        google.visualization.events.addListener(table,'page', changePage);
     }
     function changePage(e) {
         console.log(page_size);
         page_num = e['page'] + 1;
-        //alert('The user is navigating to page ' + page_num);
+       // alert('The user is navigating to page ' + page_num);
        
-        post('/search', {page_num: page_num, page_size: page_size, function: 'changePage', racer:"{{racer}}", race_class:"{{race_class}}", track:"{{track}}", isBest:"{{isBest}}" });
+        post('/', {page_num: page_num, page_size: page_size, function: 'changePage', racer:"{{racer}}", race_class:"{{race_class}}", track:"{{track}}", isBest:"{{isBest}}" });
         table.draw(data);
     }
-    dashboard.draw(data);
+    
+    //dashboard.draw(data);
 }
 
 
 </script>
-    <p align="center"  style="background-color:#b9b8b8">
-            <img src="/images/0.gif" alt="Banner" align="middle" />
-            <hr>
-            <div class='menu'>{{ menu }}</div><div class='greeting'>{{ greeting }}</div>
-            <br><hr>
-        </p>
+
 </head>
 <body>
-    <div id="w">
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+                <a class="navbar-brand" href="/search">Lap Records</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                    {{ menu }}                
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                    {{ greeting }}
+            </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+    <div class="site-content">
         <center><form action="/search" method="POST" enctype="multipart/form-data" >
             <div class='inline'>Racer Name: <select id="selectRacer" name="racer">
                 <option></option></select></div>
@@ -230,10 +273,7 @@ function drawTable() {
         </form></center>
         <hr>
         <div id="content">
-            <div id="dashboard" align="center">
-                <div class='inline'><div id="racer_filter"></div></div>
-                <div class='inline'><div id="class_filter"></div></div>
-                <div class='inline'><div id="track_filter"></div></div>
+            <div class="table-responsive" align="center">
                 <br>
                 <br>
                 <div id="table_div"></div>
