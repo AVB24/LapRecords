@@ -109,6 +109,21 @@ class DataServices():
 		return get_data
 
 class UIServices():
+	def get_styling(self):
+		try:
+			ret = urllib.urlopen("http://maxcdn.bootstrapcdn.com/bootswatch/3.3.1/yeti/bootstrap.min.css").getcode()
+			logging.error('Returned 200')
+			style = """<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.1/yeti/bootstrap.min.css" rel="stylesheet" media="screen">
+				<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+				"""
+		except IOError:
+			logging.error('Not 200')
+			style = """
+			<link rel="stylesheet" type="text/css" media="all" href="../css/bootstrap.min.css">
+			<script type="text/javascript" src="../js/jsapi.js"></script>
+			"""
+		return style
+
 	def get_greeting(self, user):
 		if user:
 			greeting = ("<li><a href=\"%s\">sign out</a></li>" %
@@ -316,7 +331,8 @@ class MainHandler(webapp2.RequestHandler):
 			'page_num': 0,
 			'searchRacers': searchRacers,
 			'searchClasses': searchClasses,
-			'searchTracks': searchTracks
+			'searchTracks': searchTracks,
+			'style': ui_services.get_styling()
 		}
 
 		template = JINJA_ENVIRONMENT.get_template('templates/index.html')
