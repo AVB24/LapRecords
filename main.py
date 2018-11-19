@@ -297,17 +297,17 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				r.put()
 				best = BestLap.get_or_insert(key_name=sd+t+g+cl.name+racer_name.replace(' ','.'), driver=r, raceclass=cl, track=t, time=pt, event=e, isBest=False, date=dt)
 
-			if cl.name in bestlaps:
-				if pt < bestlaps[cl.name].time and pt != 0.0:
-					print str(pt) + ' is better than ' + bestlaps[cl.name].driver.name + 's time of ' + str(bestlaps[cl.name].time)
-					best.isBest = True					#Mark current record as best
-					bestlaps[cl.name].isBest = False	#Mark old record as not best
-					bestlaps[cl.name].put()				#Commit old record to db
-					bestlaps[cl.name] = best 			#Replace record in local dictionary with new best record for class
-			elif pt != 0.0:
-				best.isBest = True
-				bestlaps[cl.name] = best
-			lapsToUpload.append(best)
+				if cl.name in bestlaps:
+					if pt < bestlaps[cl.name].time and pt != 0.0:
+						print str(pt) + ' is better than ' + bestlaps[cl.name].driver.name + 's time of ' + str(bestlaps[cl.name].time)
+						best.isBest = True					#Mark current record as best
+						bestlaps[cl.name].isBest = False	#Mark old record as not best
+						bestlaps[cl.name].put()				#Commit old record to db
+						bestlaps[cl.name] = best 			#Replace record in local dictionary with new best record for class
+				elif pt != 0.0:
+					best.isBest = True
+					bestlaps[cl.name] = best
+				lapsToUpload.append(best)
 		db.put(lapsToUpload)
 		self.redirect('/')
 
@@ -404,7 +404,8 @@ class MainHandler(webapp2.RequestHandler):
 			'isBest': isBest,
 			'searchRacers': searchRacers,
 			'searchClasses': searchClasses,
-			'searchTracks': searchTracks
+			'searchTracks': searchTracks,
+			'style': ui_services.get_styling()
 		}
 
 		template = JINJA_ENVIRONMENT.get_template('templates/index.html')

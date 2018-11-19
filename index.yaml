@@ -12,6 +12,12 @@ indexes:
 
 - kind: BestLap
   properties:
+  - name: driver
+  - name: date
+    direction: desc
+
+- kind: BestLap
+  properties:
   - name: isBest
   - name: date
     direction: desc
